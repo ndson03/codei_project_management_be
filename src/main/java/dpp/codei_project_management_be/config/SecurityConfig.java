@@ -2,6 +2,7 @@ package dpp.codei_project_management_be.config;
 
 import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.service.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 
 @Configuration
 @EnableMethodSecurity
@@ -30,7 +32,7 @@ public class SecurityConfig {
             JwtAuthenticationFilter jwtAuthenticationFilter,
             AuthenticationProvider authenticationProvider,
             ApiAuthorizationService apiAuthorizationService
-    ) throws Exception {
+    ) {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
@@ -38,19 +40,13 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/departments/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/api/admin/departments").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/api/admin/departments/*/pic").hasRole(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.POST, "/api/departments/*/projects/**")
-                        .access((authentication, context) ->
-                                new AuthorizationDecision(
-                                        apiAuthorizationService.canCreateProject(authentication.get(), context.getRequest())
-                                )
-                        )
+                        .access((authentication, context) -> canCreateProject(authentication.get(), context, apiAuthorizationService))
+                        .requestMatchers(HttpMethod.PUT, "/api/projects/*/pm").hasRole(Role.DEPT_PIC.name())
                         .requestMatchers(HttpMethod.PUT, "/api/projects/*")
-                        .access((authentication, context) ->
-                                new AuthorizationDecision(
-                                        apiAuthorizationService.canUpdateProject(authentication.get(), context.getRequest())
-                                )
-                        )
+                        .access((authentication, context) -> canUpdateProject(authentication.get(), context, apiAuthorizationService))
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -74,8 +70,32 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
         return configuration.getAuthenticationManager();
+    }
+
+    private AuthorizationDecision canCreateProject(
+            org.springframework.security.core.Authentication authentication,
+            RequestAuthorizationContext context,
+            ApiAuthorizationService apiAuthorizationService
+    ) {
+        HttpServletRequest request = context.getRequest();
+        if (authentication == null || request == null) {
+            return new AuthorizationDecision(false);
+        }
+        return new AuthorizationDecision(apiAuthorizationService.canCreateProject(authentication, request));
+    }
+
+    private AuthorizationDecision canUpdateProject(
+            org.springframework.security.core.Authentication authentication,
+            RequestAuthorizationContext context,
+            ApiAuthorizationService apiAuthorizationService
+    ) {
+        HttpServletRequest request = context.getRequest();
+        if (authentication == null || request == null) {
+            return new AuthorizationDecision(false);
+        }
+        return new AuthorizationDecision(apiAuthorizationService.canUpdateProject(authentication, request));
     }
 }
 
