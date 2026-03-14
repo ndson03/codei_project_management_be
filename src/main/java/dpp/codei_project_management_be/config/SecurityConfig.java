@@ -40,13 +40,24 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.POST, "/api/admin/departments").hasRole(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.PUT, "/api/admin/departments/*/pic").hasRole(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.POST, "/api/departments/*/projects/**")
-                        .access((authentication, context) -> canCreateProject(authentication.get(), context, apiAuthorizationService))
+                        .access((authentication, context) -> {
+                            if (context == null) {
+                                return new AuthorizationDecision(false);
+                            }
+                            return canCreateProject(authentication.get(), context, apiAuthorizationService);
+                        })
                         .requestMatchers(HttpMethod.PUT, "/api/projects/*/pm").hasRole(Role.DEPT_PIC.name())
                         .requestMatchers(HttpMethod.PUT, "/api/projects/*")
-                        .access((authentication, context) -> canUpdateProject(authentication.get(), context, apiAuthorizationService))
+                        .access((authentication, context) -> {
+                            if (context == null) {
+                                return new AuthorizationDecision(false);
+                            }
+                            return canUpdateProject(authentication.get(), context, apiAuthorizationService);
+                        })
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -80,7 +91,7 @@ public class SecurityConfig {
             ApiAuthorizationService apiAuthorizationService
     ) {
         HttpServletRequest request = context.getRequest();
-        if (authentication == null || request == null) {
+        if (authentication == null) {
             return new AuthorizationDecision(false);
         }
         return new AuthorizationDecision(apiAuthorizationService.canCreateProject(authentication, request));
@@ -92,7 +103,7 @@ public class SecurityConfig {
             ApiAuthorizationService apiAuthorizationService
     ) {
         HttpServletRequest request = context.getRequest();
-        if (authentication == null || request == null) {
+        if (authentication == null) {
             return new AuthorizationDecision(false);
         }
         return new AuthorizationDecision(apiAuthorizationService.canUpdateProject(authentication, request));

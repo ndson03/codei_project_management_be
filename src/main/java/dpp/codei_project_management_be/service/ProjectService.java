@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ProjectService {
@@ -42,6 +43,11 @@ public class ProjectService {
         project.setRepositories(new ArrayList<>(request.getRepositories()));
 
         return projectRepository.save(project);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Project> getAllProjects() {
+        return projectRepository.findAll();
     }
 }
 

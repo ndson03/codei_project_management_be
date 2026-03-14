@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class DepartmentService {
@@ -79,6 +80,11 @@ public class DepartmentService {
 
         project.getPms().add(pmUser);
         return projectRepository.save(project);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Department> getAllDepartments() {
+        return departmentRepository.findAll();
     }
 
     private void requireDeptPicOfDepartment(User currentUser, Long deptId) {
