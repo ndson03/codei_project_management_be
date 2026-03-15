@@ -56,7 +56,12 @@ class BusinessServiceAuthorizationTest {
         current.setRole(Role.DEVELOPER);
         when(userRepository.findByUsername("dev")).thenReturn(Optional.of(current));
 
-        AdminService adminService = new AdminService(departmentRepository, userRepository, currentUserService);
+        AdminService adminService = new AdminService(
+                departmentRepository,
+                userRepository,
+                projectRepository,
+                currentUserService
+        );
 
         assertThrows(AccessDeniedException.class, () -> adminService.assignDeptPic(2L, 1L));
     }
@@ -76,7 +81,12 @@ class BusinessServiceAuthorizationTest {
         when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
         when(userRepository.findById(2L)).thenReturn(Optional.of(notDeptPic));
 
-        AdminService adminService = new AdminService(departmentRepository, userRepository, currentUserService);
+        AdminService adminService = new AdminService(
+                departmentRepository,
+                userRepository,
+                projectRepository,
+                currentUserService
+        );
 
         assertThrows(IllegalArgumentException.class, () -> adminService.assignDeptPic(2L, 1L));
     }

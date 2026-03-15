@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -30,6 +32,12 @@ public class AuthController {
 
         String token = jwtProvider.generateToken(authentication);
         return ResponseEntity.ok(new LoginResponse(token));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout() {
+        // JWT is stateless: FE should remove token on client side.
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 }
 
