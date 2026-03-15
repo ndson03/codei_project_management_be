@@ -30,9 +30,6 @@ public class AdminService {
     public Department createDepartment(Department department) {
         requireAdmin();
 
-        Long nextPartId = departmentRepository.findMaxPartId() + 1;
-        department.setPartId(nextPartId);
-
         if (department.getDepartmentPic() != null && department.getDepartmentPic().getId() != null) {
             department.setDepartmentPic(resolveUser(department.getDepartmentPic().getId()));
         }

@@ -2,7 +2,6 @@ package dpp.codei_project_management_be.repository;
 
 import dpp.codei_project_management_be.entity.Department;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -10,8 +9,5 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 	boolean existsByPartIdAndDepartmentPicUsername(Long partId, String username);
 	boolean existsByDepartmentPicUsername(String username);
 	List<Department> findAllByDepartmentPicUsername(String username);
-
-	@Query("select coalesce(max(d.partId), 0) from Department d")
-	Long findMaxPartId();
 }
 
