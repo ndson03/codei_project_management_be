@@ -5,6 +5,7 @@ import dpp.codei_project_management_be.dto.department.CreateDepartmentRequest;
 import dpp.codei_project_management_be.dto.department.DepartmentResponse;
 import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.service.AdminService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,13 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/admin")
+@RequiredArgsConstructor
 public class AdminController {
 
     private final AdminService adminService;
 
-    public AdminController(AdminService adminService) {
-        this.adminService = adminService;
-    }
 
     @PostMapping("/departments")
     public ResponseEntity<DepartmentResponse> createDepartment(@RequestBody CreateDepartmentRequest request) {

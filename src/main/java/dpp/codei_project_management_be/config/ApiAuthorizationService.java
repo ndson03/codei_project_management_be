@@ -3,20 +3,18 @@ package dpp.codei_project_management_be.config;
 import dpp.codei_project_management_be.repository.DepartmentRepository;
 import dpp.codei_project_management_be.repository.ProjectRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class ApiAuthorizationService {
 
     private final DepartmentRepository departmentRepository;
     private final ProjectRepository projectRepository;
 
-    public ApiAuthorizationService(DepartmentRepository departmentRepository, ProjectRepository projectRepository) {
-        this.departmentRepository = departmentRepository;
-        this.projectRepository = projectRepository;
-    }
 
     public boolean canCreateProject(Authentication authentication, HttpServletRequest request) {
         if (!hasRole(authentication, "ROLE_DEPT_PIC")) {

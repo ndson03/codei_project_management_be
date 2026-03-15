@@ -1,10 +1,16 @@
 package dpp.codei_project_management_be.dto.project;
 
 import dpp.codei_project_management_be.entity.Project;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
+@NoArgsConstructor
 public class ProjectResponse {
 
     private Long id;
@@ -17,9 +23,6 @@ public class ProjectResponse {
     private List<String> pics = new ArrayList<>();
     private List<String> devWhiteList = new ArrayList<>();
     private List<Long> pmUserIds = new ArrayList<>();
-
-    public ProjectResponse() {
-    }
 
     public static ProjectResponse from(Project project) {
         ProjectResponse response = new ProjectResponse();
@@ -36,84 +39,5 @@ public class ProjectResponse {
         return response;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
-    }
-
-    public String getProjectName() {
-        return projectName;
-    }
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-    public String getBranch() {
-        return branch;
-    }
-
-    public void setBranch(String branch) {
-        this.branch = branch;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public List<String> getTaskManagements() {
-        return taskManagements;
-    }
-
-    public void setTaskManagements(List<String> taskManagements) {
-        this.taskManagements = taskManagements;
-    }
-
-    public List<String> getRepositories() {
-        return repositories;
-    }
-
-    public void setRepositories(List<String> repositories) {
-        this.repositories = repositories;
-    }
-
-    public List<String> getPics() {
-        return pics;
-    }
-
-    public void setPics(List<String> pics) {
-        this.pics = pics;
-    }
-
-    public List<String> getDevWhiteList() {
-        return devWhiteList;
-    }
-
-    public void setDevWhiteList(List<String> devWhiteList) {
-        this.devWhiteList = devWhiteList;
-    }
-
-    public List<Long> getPmUserIds() {
-        return pmUserIds;
-    }
-
-    public void setPmUserIds(List<Long> pmUserIds) {
-        this.pmUserIds = pmUserIds;
-    }
 }
 

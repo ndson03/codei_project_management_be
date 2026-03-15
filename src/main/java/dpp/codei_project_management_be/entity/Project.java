@@ -13,6 +13,9 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,6 +24,9 @@ import java.util.Set;
 
 @Entity
 @Table(name = "project_information")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Project {
 
     @Id
@@ -67,88 +73,5 @@ public class Project {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     private Set<User> pms = new HashSet<>();
-
-    public Project() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Department getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(Department department) {
-        this.department = department;
-    }
-
-    public String getProjectName() {
-        return projectName;
-    }
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-    public String getBranch() {
-        return branch;
-    }
-
-    public void setBranch(String branch) {
-        this.branch = branch;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public List<String> getTaskManagements() {
-        return taskManagements;
-    }
-
-    public void setTaskManagements(List<String> taskManagements) {
-        this.taskManagements = taskManagements;
-    }
-
-    public List<String> getRepositories() {
-        return repositories;
-    }
-
-    public void setRepositories(List<String> repositories) {
-        this.repositories = repositories;
-    }
-
-    public List<String> getPics() {
-        return pics;
-    }
-
-    public void setPics(List<String> pics) {
-        this.pics = pics;
-    }
-
-    public List<String> getDevWhiteList() {
-        return devWhiteList;
-    }
-
-    public void setDevWhiteList(List<String> devWhiteList) {
-        this.devWhiteList = devWhiteList;
-    }
-
-    public Set<User> getPms() {
-        return pms;
-    }
-
-    public void setPms(Set<User> pms) {
-        this.pms = pms;
-    }
 }
 

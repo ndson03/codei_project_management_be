@@ -3,6 +3,7 @@ package dpp.codei_project_management_be.controller;
 import dpp.codei_project_management_be.config.JwtProvider;
 import dpp.codei_project_management_be.dto.user.LoginRequest;
 import dpp.codei_project_management_be.dto.user.LoginResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,15 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtProvider jwtProvider;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtProvider jwtProvider) {
-        this.authenticationManager = authenticationManager;
-        this.jwtProvider = jwtProvider;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {

@@ -2,7 +2,13 @@ package dpp.codei_project_management_be.dto.user;
 
 import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
+@NoArgsConstructor
 public class UserResponse {
 
     private Long id;
@@ -10,9 +16,6 @@ public class UserResponse {
     private String fullname;
     private String email;
     private Role role;
-
-    public UserResponse() {
-    }
 
     public static UserResponse from(User user) {
         UserResponse response = new UserResponse();
@@ -24,44 +27,6 @@ public class UserResponse {
         return response;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getFullname() {
-        return fullname;
-    }
-
-    public void setFullname(String fullname) {
-        this.fullname = fullname;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
 }
+
 

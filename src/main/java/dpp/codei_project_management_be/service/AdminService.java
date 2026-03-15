@@ -6,26 +6,19 @@ import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.DepartmentRepository;
 import dpp.codei_project_management_be.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class AdminService {
 
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
 
-    public AdminService(
-            DepartmentRepository departmentRepository,
-            UserRepository userRepository,
-            CurrentUserService currentUserService
-    ) {
-        this.departmentRepository = departmentRepository;
-        this.userRepository = userRepository;
-        this.currentUserService = currentUserService;
-    }
 
     @Transactional
     public Department createDepartment(Department department) {

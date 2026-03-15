@@ -5,6 +5,7 @@ import dpp.codei_project_management_be.dto.project.ProjectDataRequest;
 import dpp.codei_project_management_be.dto.project.ProjectResponse;
 import dpp.codei_project_management_be.entity.Project;
 import dpp.codei_project_management_be.service.DepartmentService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,13 +19,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/departments")
+@RequiredArgsConstructor
 public class DepartmentController {
 
     private final DepartmentService departmentService;
-
-    public DepartmentController(DepartmentService departmentService) {
-        this.departmentService = departmentService;
-    }
 
     @GetMapping
     public ResponseEntity<List<DepartmentResponse>> getAllDepartments() {

@@ -6,6 +6,7 @@ import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.ProjectRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,15 +15,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final CurrentUserService currentUserService;
 
-    public ProjectService(ProjectRepository projectRepository, CurrentUserService currentUserService) {
-        this.projectRepository = projectRepository;
-        this.currentUserService = currentUserService;
-    }
 
     @Transactional
     public Project updateProjectInfo(Long projectId, ProjectUpdateInfoRequest request) {

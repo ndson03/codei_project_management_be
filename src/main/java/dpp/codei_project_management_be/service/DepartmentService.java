@@ -9,6 +9,7 @@ import dpp.codei_project_management_be.repository.DepartmentRepository;
 import dpp.codei_project_management_be.repository.ProjectRepository;
 import dpp.codei_project_management_be.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,24 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
-
-    public DepartmentService(
-            DepartmentRepository departmentRepository,
-            ProjectRepository projectRepository,
-            UserRepository userRepository,
-            CurrentUserService currentUserService
-    ) {
-        this.departmentRepository = departmentRepository;
-        this.projectRepository = projectRepository;
-        this.userRepository = userRepository;
-        this.currentUserService = currentUserService;
-    }
 
     @Transactional
     public Project createProject(Long deptId, ProjectDataRequest projectData) {
