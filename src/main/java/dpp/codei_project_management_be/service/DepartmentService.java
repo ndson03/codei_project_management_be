@@ -1,6 +1,7 @@
 package dpp.codei_project_management_be.service;
 
 import dpp.codei_project_management_be.dto.project.ProjectDataRequest;
+import dpp.codei_project_management_be.dto.department.UpdateDepartmentRequest;
 import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.entity.Project;
 import dpp.codei_project_management_be.entity.User;
@@ -58,6 +59,47 @@ public class DepartmentService {
             return departmentRepository.findAllByDepartmentPicUsername(currentUser.getUsername());
         }
         return List.of();
+    }
+
+    @Transactional
+    public Department updateDepartment(Long deptId, UpdateDepartmentRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        Department department = departmentRepository.findById(deptId)
+                .orElseThrow(() -> new EntityNotFoundException("Department not found: " + deptId));
+
+        boolean isAdmin = accessControlService.isAdmin(currentUser);
+        boolean isOwnerPic = accessControlService.isDepartmentPicOf(currentUser, deptId);
+        if (!isAdmin && !isOwnerPic) {
+            throw new AccessDeniedException("Only ADMIN or owning PIC can update this department");
+        }
+
+        if (request.getPartName() != null) department.setPartName(request.getPartName());
+        if (request.getGitPat() != null) department.setGitPat(request.getGitPat());
+        if (request.getEcodePat() != null) department.setEcodePat(request.getEcodePat());
+        if (request.getGerritUserName() != null) department.setGerritUserName(request.getGerritUserName());
+        if (request.getGerritHttpPassword() != null) department.setGerritHttpPassword(request.getGerritHttpPassword());
+        if (request.getJiraSecPat() != null) department.setJiraSecPat(request.getJiraSecPat());
+        if (request.getJiraMxPat() != null) department.setJiraMxPat(request.getJiraMxPat());
+        if (request.getJiraLaPat() != null) department.setJiraLaPat(request.getJiraLaPat());
+
+        if (request.getDepartmentPicUsername() != null && !request.getDepartmentPicUsername().isBlank()) {
+            if (!isAdmin) {
+                throw new AccessDeniedException("Only ADMIN can reassign department PIC");
+            }
+
+            User picUser = userRepository.findById(request.getDepartmentPicUsername())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found: " + request.getDepartmentPicUsername()));
+            if (accessControlService.isAdmin(picUser)) {
+                throw new IllegalArgumentException("Admin user cannot be assigned as Department PIC");
+            }
+            if (departmentRepository.existsByDepartmentPicUsernameAndPartIdNot(picUser.getUsername(), deptId)) {
+                throw new IllegalArgumentException("User is already PIC of another department");
+            }
+            department.setDepartmentPic(picUser);
+        }
+
+        return departmentRepository.save(department);
     }
 
     @Transactional
