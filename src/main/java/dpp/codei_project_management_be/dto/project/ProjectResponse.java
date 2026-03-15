@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,8 @@ public class ProjectResponse {
     private List<String> pics = new ArrayList<>();
     private List<String> devWhiteList = new ArrayList<>();
     private List<Long> pmUserIds = new ArrayList<>();
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static ProjectResponse from(Project project) {
         ProjectResponse response = new ProjectResponse();
@@ -37,6 +40,8 @@ public class ProjectResponse {
         response.setPics(ProjectFieldCodec.decodeStrings(project.getPics()));
         response.setDevWhiteList(ProjectFieldCodec.decodeStrings(project.getDevWhiteList()));
         response.setPmUserIds(ProjectFieldCodec.decodeLongs(project.getPmUserIds()));
+        response.setCreatedAt(project.getCreatedAt());
+        response.setUpdatedAt(project.getUpdatedAt());
         return response;
     }
 
