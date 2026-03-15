@@ -2,11 +2,10 @@ package dpp.codei_project_management_be.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,9 +20,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class StatisticResult {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @EmbeddedId
+    @JsonIgnore
+    private StatisticResultId id;
 
     @JsonProperty("Department ID")
     @Column(name = "department_id")
@@ -38,12 +37,28 @@ public class StatisticResult {
     private String projectName;
 
     @JsonProperty("Issue Key")
-    @Column(name = "issue_key")
-    private String issueKey;
+    public String getIssueKey() {
+        return id != null ? id.getIssueKey() : null;
+    }
+
+    public void setIssueKey(String issueKey) {
+        if (id == null) {
+            id = new StatisticResultId();
+        }
+        id.setIssueKey(issueKey);
+    }
 
     @JsonProperty("PR Number")
-    @Column(name = "pr_number")
-    private Double prNumber;
+    public Double getPrNumber() {
+        return id != null ? id.getPrNumber() : null;
+    }
+
+    public void setPrNumber(Double prNumber) {
+        if (id == null) {
+            id = new StatisticResultId();
+        }
+        id.setPrNumber(prNumber);
+    }
 
     @JsonProperty("Created Time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
