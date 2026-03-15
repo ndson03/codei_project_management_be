@@ -43,6 +43,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.POST, "/api/admin/departments").hasRole(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.PUT, "/api/admin/departments/*/pic").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/api/admin/departments/*").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/api/admin/departments/*").hasRole(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.POST, "/api/departments/*/projects/**")
                         .access((authentication, context) -> {
                             if (context == null) {
@@ -51,6 +53,8 @@ public class SecurityConfig {
                             return canCreateProject(authentication.get(), context, apiAuthorizationService);
                         })
                         .requestMatchers(HttpMethod.PUT, "/api/projects/*/pm").hasRole(Role.DEPT_PIC.name())
+                        .requestMatchers(HttpMethod.PUT, "/api/projects/*/data").hasRole(Role.DEPT_PIC.name())
+                        .requestMatchers(HttpMethod.DELETE, "/api/projects/*").hasRole(Role.DEPT_PIC.name())
                         .requestMatchers(HttpMethod.PUT, "/api/projects/*")
                         .access((authentication, context) -> {
                             if (context == null) {

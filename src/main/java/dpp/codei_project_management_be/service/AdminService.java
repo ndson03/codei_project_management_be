@@ -1,9 +1,12 @@
 package dpp.codei_project_management_be.service;
 
+import dpp.codei_project_management_be.dto.department.UpdateDepartmentRequest;
 import dpp.codei_project_management_be.entity.Department;
+import dpp.codei_project_management_be.entity.Project;
 import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.DepartmentRepository;
+import dpp.codei_project_management_be.repository.ProjectRepository;
 import dpp.codei_project_management_be.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +14,15 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AdminService {
 
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
     private final CurrentUserService currentUserService;
 
 
@@ -50,6 +56,39 @@ public class AdminService {
         department.setDepartmentPic(user);
 
         return departmentRepository.save(department);
+    }
+
+    @Transactional
+    public Department updateDepartment(Long deptId, UpdateDepartmentRequest request) {
+        requireAdmin();
+
+        Department department = departmentRepository.findById(deptId)
+                .orElseThrow(() -> new EntityNotFoundException("Department not found: " + deptId));
+
+        if (request.getPartName() != null) department.setPartName(request.getPartName());
+        if (request.getGitPat() != null) department.setGitPat(request.getGitPat());
+        if (request.getEcodePat() != null) department.setEcodePat(request.getEcodePat());
+        if (request.getGerritUserName() != null) department.setGerritUserName(request.getGerritUserName());
+        if (request.getGerritHttpPassword() != null) department.setGerritHttpPassword(request.getGerritHttpPassword());
+        if (request.getJiraSecPat() != null) department.setJiraSecPat(request.getJiraSecPat());
+        if (request.getJiraMxPat() != null) department.setJiraMxPat(request.getJiraMxPat());
+        if (request.getJiraLaPat() != null) department.setJiraLaPat(request.getJiraLaPat());
+
+        return departmentRepository.save(department);
+    }
+
+    @Transactional
+    public void deleteDepartment(Long deptId) {
+        requireAdmin();
+
+        Department department = departmentRepository.findById(deptId)
+                .orElseThrow(() -> new EntityNotFoundException("Department not found: " + deptId));
+
+        // Cascade delete all projects under this department
+        List<Project> projects = projectRepository.findAllByDepartmentPartId(deptId);
+        projectRepository.deleteAll(projects);
+
+        departmentRepository.delete(department);
     }
 
     private void requireAdmin() {

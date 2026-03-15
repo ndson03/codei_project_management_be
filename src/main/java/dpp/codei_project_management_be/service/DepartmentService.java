@@ -77,6 +77,38 @@ public class DepartmentService {
         return departmentRepository.findAll();
     }
 
+    @Transactional
+    public Project updateProjectData(Long projectId, ProjectDataRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found: " + projectId));
+
+        requireDeptPicOfDepartment(currentUser, project.getDepartment().getPartId());
+
+        if (request.getProjectName() != null) project.setProjectName(request.getProjectName());
+        if (request.getBranch() != null) project.setBranch(request.getBranch());
+        if (request.getNotes() != null) project.setNotes(request.getNotes());
+        project.setTaskManagements(new ArrayList<>(request.getTaskManagements()));
+        project.setRepositories(new ArrayList<>(request.getRepositories()));
+        project.setPics(new ArrayList<>(request.getPics()));
+        project.setDevWhiteList(new ArrayList<>(request.getDevWhiteList()));
+
+        return projectRepository.save(project);
+    }
+
+    @Transactional
+    public void deleteProject(Long projectId) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new EntityNotFoundException("Project not found: " + projectId));
+
+        requireDeptPicOfDepartment(currentUser, project.getDepartment().getPartId());
+
+        projectRepository.delete(project);
+    }
+
     private void requireDeptPicOfDepartment(User currentUser, Long deptId) {
         if (currentUser.getRole() != Role.DEPT_PIC) {
             throw new AccessDeniedException("Only DEPT_PIC is allowed to create project");
