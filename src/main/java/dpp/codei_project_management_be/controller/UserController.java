@@ -9,6 +9,7 @@ import dpp.codei_project_management_be.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,8 +25,20 @@ public class UserController {
     private final AccessControlService accessControlService;
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> responses = userService.getAllUsers().stream()
+    public ResponseEntity<List<UserResponse>> getAllUsers(
+            @RequestParam(required = false) String assignmentType,
+            @RequestParam(required = false) Long deptId
+    ) {
+        List<User> users;
+        if ("PIC".equalsIgnoreCase(assignmentType)) {
+            users = userService.getUsersForDepartmentPicAssignment(deptId);
+        } else if ("PM".equalsIgnoreCase(assignmentType) && deptId != null) {
+            users = userService.getUsersByPartId(deptId);
+        } else {
+            users = userService.getAllUsers();
+        }
+
+        List<UserResponse> responses = users.stream()
                 .map(UserResponse::from)
                 .toList();
         return ResponseEntity.ok(responses);

@@ -12,7 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 public class UserMeResponse {
 
-    private Long id;
     private String username;
     private String fullname;
     private String email;
@@ -27,7 +26,6 @@ public class UserMeResponse {
             List<Long> pmProjectIds
     ) {
         UserMeResponse response = new UserMeResponse();
-        response.setId(user.getId());
         response.setUsername(user.getUsername());
         response.setFullname(user.getFullname());
         response.setEmail(user.getEmail());

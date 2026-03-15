@@ -17,25 +17,25 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 			select 1
 			from project_information p
 			where p.id = :projectId
-			  and coalesce(p.pm_user_ids, '[]')::jsonb @> cast(concat('[', cast(:userId as text), ']') as jsonb)
+			  and coalesce(p.pm_usernames, '[]')::jsonb @> to_jsonb(ARRAY[:username])
 		)
 		""", nativeQuery = true)
-	boolean existsByIdAndPmUserId(@Param("projectId") Long projectId, @Param("userId") Long userId);
+	boolean existsByIdAndPmUsername(@Param("projectId") Long projectId, @Param("username") String username);
 
 	@Query(value = """
 		select exists (
 			select 1
 			from project_information p
-			where coalesce(p.pm_user_ids, '[]')::jsonb @> cast(concat('[', cast(:userId as text), ']') as jsonb)
+			where coalesce(p.pm_usernames, '[]')::jsonb @> to_jsonb(ARRAY[:username])
 		)
 		""", nativeQuery = true)
-	boolean existsByPmUserId(@Param("userId") Long userId);
+	boolean existsByPmUsername(@Param("username") String username);
 
 	@Query(value = """
 		select p.*
 		from project_information p
-		where coalesce(p.pm_user_ids, '[]')::jsonb @> cast(concat('[', cast(:userId as text), ']') as jsonb)
+		where coalesce(p.pm_usernames, '[]')::jsonb @> to_jsonb(ARRAY[:username])
 		""", nativeQuery = true)
-	List<Project> findAllByPmUserId(@Param("userId") Long userId);
+	List<Project> findAllByPmUsername(@Param("username") String username);
 }
 

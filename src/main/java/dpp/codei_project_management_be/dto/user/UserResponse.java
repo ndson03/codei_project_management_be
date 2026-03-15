@@ -10,17 +10,17 @@ import lombok.Setter;
 @NoArgsConstructor
 public class UserResponse {
 
-    private Long id;
     private String username;
     private String fullname;
     private String email;
+    private Long partId;
 
     public static UserResponse from(User user) {
         UserResponse response = new UserResponse();
-        response.setId(user.getId());
         response.setUsername(user.getUsername());
         response.setFullname(user.getFullname());
         response.setEmail(user.getEmail());
+        response.setPartId(user.getPartId());
         return response;
     }
 

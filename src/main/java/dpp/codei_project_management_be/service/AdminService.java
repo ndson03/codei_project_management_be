@@ -1,5 +1,6 @@
 package dpp.codei_project_management_be.service;
 
+import dpp.codei_project_management_be.dto.department.CreateDepartmentRequest;
 import dpp.codei_project_management_be.dto.department.UpdateDepartmentRequest;
 import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.entity.Project;
@@ -27,11 +28,23 @@ public class AdminService {
 
 
     @Transactional
-    public Department createDepartment(Department department) {
+    public Department createDepartment(CreateDepartmentRequest request) {
         requireAdmin();
 
-        if (department.getDepartmentPic() != null && department.getDepartmentPic().getId() != null) {
-            department.setDepartmentPic(resolveUser(department.getDepartmentPic().getId()));
+        Department department = new Department();
+        department.setPartName(request.getPartName());
+        department.setGitPat(request.getGitPat());
+        department.setEcodePat(request.getEcodePat());
+        department.setGerritUserName(request.getGerritUserName());
+        department.setGerritHttpPassword(request.getGerritHttpPassword());
+        department.setJiraSecPat(request.getJiraSecPat());
+        department.setJiraMxPat(request.getJiraMxPat());
+        department.setJiraLaPat(request.getJiraLaPat());
+
+        if (request.getDepartmentPicUsername() != null && !request.getDepartmentPicUsername().isBlank()) {
+            User picUser = resolveUser(request.getDepartmentPicUsername());
+            validateDepartmentPicCandidate(picUser, null);
+            department.setDepartmentPic(picUser);
         }
 
         return departmentRepository.save(department);
@@ -52,7 +65,11 @@ public class AdminService {
         if (request.getJiraSecPat() != null) department.setJiraSecPat(request.getJiraSecPat());
         if (request.getJiraMxPat() != null) department.setJiraMxPat(request.getJiraMxPat());
         if (request.getJiraLaPat() != null) department.setJiraLaPat(request.getJiraLaPat());
-        if (request.getDepartmentPicUserId() != null) department.setDepartmentPic(resolveUser(request.getDepartmentPicUserId()));
+        if (request.getDepartmentPicUsername() != null && !request.getDepartmentPicUsername().isBlank()) {
+            User picUser = resolveUser(request.getDepartmentPicUsername());
+            validateDepartmentPicCandidate(picUser, deptId);
+            department.setDepartmentPic(picUser);
+        }
 
         return departmentRepository.save(department);
     }
@@ -78,9 +95,23 @@ public class AdminService {
         }
     }
 
-    private User resolveUser(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
+    private User resolveUser(String username) {
+        return userRepository.findById(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+    }
+
+    private void validateDepartmentPicCandidate(User user, Long departmentId) {
+        if (accessControlService.isAdmin(user)) {
+            throw new IllegalArgumentException("Admin user cannot be assigned as Department PIC");
+        }
+
+        boolean assignedAsPicElsewhere = departmentId == null
+                ? departmentRepository.existsByDepartmentPicUsername(user.getUsername())
+                : departmentRepository.existsByDepartmentPicUsernameAndPartIdNot(user.getUsername(), departmentId);
+
+        if (assignedAsPicElsewhere) {
+            throw new IllegalArgumentException("User is already PIC of another department");
+        }
     }
 }
 

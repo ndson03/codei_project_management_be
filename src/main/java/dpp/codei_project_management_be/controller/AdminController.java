@@ -3,7 +3,6 @@ package dpp.codei_project_management_be.controller;
 import dpp.codei_project_management_be.dto.department.CreateDepartmentRequest;
 import dpp.codei_project_management_be.dto.department.DepartmentResponse;
 import dpp.codei_project_management_be.dto.department.UpdateDepartmentRequest;
-import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,23 +25,7 @@ public class AdminController {
 
     @PostMapping("/departments")
     public ResponseEntity<DepartmentResponse> createDepartment(@RequestBody CreateDepartmentRequest request) {
-        Department department = new Department();
-        department.setPartName(request.getPartName());
-        department.setGitPat(request.getGitPat());
-        department.setEcodePat(request.getEcodePat());
-        department.setGerritUserName(request.getGerritUserName());
-        department.setGerritHttpPassword(request.getGerritHttpPassword());
-        department.setJiraSecPat(request.getJiraSecPat());
-        department.setJiraMxPat(request.getJiraMxPat());
-        department.setJiraLaPat(request.getJiraLaPat());
-
-        if (request.getDepartmentPicUserId() != null) {
-            dpp.codei_project_management_be.entity.User pic = new dpp.codei_project_management_be.entity.User();
-            pic.setId(request.getDepartmentPicUserId());
-            department.setDepartmentPic(pic);
-        }
-
-        Department createdDepartment = adminService.createDepartment(department);
+        var createdDepartment = adminService.createDepartment(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(DepartmentResponse.from(createdDepartment));
     }
 
@@ -51,7 +34,7 @@ public class AdminController {
             @PathVariable Long deptId,
             @RequestBody UpdateDepartmentRequest request
     ) {
-        Department updatedDepartment = adminService.updateDepartment(deptId, request);
+        var updatedDepartment = adminService.updateDepartment(deptId, request);
         return ResponseEntity.ok(DepartmentResponse.from(updatedDepartment));
     }
 

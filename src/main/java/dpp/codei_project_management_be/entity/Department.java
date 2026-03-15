@@ -50,7 +50,7 @@ public class Department {
     private String jiraLaPat;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pic_user_id", unique = true)
+    @JoinColumn(name = "pic_username", referencedColumnName = "username", unique = true)
     private User departmentPic;
 }
 

@@ -53,8 +53,8 @@ public class Project {
     @Column(name = "dev_white_list", columnDefinition = "TEXT")
     private String devWhiteList = "[]";
 
-    @Column(name = "pm_user_ids", columnDefinition = "TEXT")
-    private String pmUserIds = "[]";
+    @Column(name = "pm_usernames", columnDefinition = "TEXT")
+    private String pmUsernames = "[]";
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

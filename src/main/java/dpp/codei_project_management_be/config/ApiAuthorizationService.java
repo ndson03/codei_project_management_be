@@ -39,7 +39,7 @@ public class ApiAuthorizationService {
         }
 
         return userRepository.findByUsername(authentication.getName())
-            .map(user -> projectRepository.existsByIdAndPmUserId(projectId, user.getId()))
+            .map(user -> projectRepository.existsByIdAndPmUsername(projectId, user.getUsername()))
             .orElse(false);
     }
 

@@ -19,7 +19,6 @@ public class DepartmentResponse {
     private String jiraSecPat;
     private String jiraMxPat;
     private String jiraLaPat;
-    private Long departmentPicUserId;
     private String departmentPicUsername;
 
     public static DepartmentResponse from(Department department) {
@@ -33,9 +32,6 @@ public class DepartmentResponse {
         response.setJiraSecPat(department.getJiraSecPat());
         response.setJiraMxPat(department.getJiraMxPat());
         response.setJiraLaPat(department.getJiraLaPat());
-        response.setDepartmentPicUserId(
-                department.getDepartmentPic() != null ? department.getDepartmentPic().getId() : null
-        );
         response.setDepartmentPicUsername(
                 department.getDepartmentPic() != null ? department.getDepartmentPic().getUsername() : null
         );

@@ -8,6 +8,7 @@ import java.util.List;
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
 	boolean existsByPartIdAndDepartmentPicUsername(Long partId, String username);
 	boolean existsByDepartmentPicUsername(String username);
+	boolean existsByDepartmentPicUsernameAndPartIdNot(String username, Long partId);
 	List<Department> findAllByDepartmentPicUsername(String username);
 }
 

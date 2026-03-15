@@ -44,7 +44,7 @@ public class DepartmentService {
         project.setRepositories(ProjectFieldCodec.encodeStrings(projectData.getRepositories()));
         project.setPics(ProjectFieldCodec.encodeStrings(projectData.getPics()));
         project.setDevWhiteList(ProjectFieldCodec.encodeStrings(projectData.getDevWhiteList()));
-        project.setPmUserIds(ProjectFieldCodec.encodeLongs(resolveUserIds(projectData.getPmUserIds())));
+        project.setPmUsernames(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(deptId, projectData.getPmUsernames())));
 
         return projectRepository.save(project);
     }
@@ -83,7 +83,7 @@ public class DepartmentService {
         project.setPics(ProjectFieldCodec.encodeStrings(request.getPics()));
         project.setDevWhiteList(ProjectFieldCodec.encodeStrings(request.getDevWhiteList()));
         if (canManageProject) {
-            project.setPmUserIds(ProjectFieldCodec.encodeLongs(resolveUserIds(request.getPmUserIds())));
+            project.setPmUsernames(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(project.getDepartment().getPartId(), request.getPmUsernames())));
         }
 
         return projectRepository.save(project);
@@ -107,18 +107,25 @@ public class DepartmentService {
         }
     }
 
-    private List<Long> resolveUserIds(List<Long> userIds) {
-        LinkedHashSet<Long> userIdSet = new LinkedHashSet<>();
-        for (Long userId : userIds) {
-            resolveUser(userId);
-            userIdSet.add(userId);
+    private List<String> resolveUsernamesForDepartment(Long departmentId, List<String> usernames) {
+        if (usernames == null) {
+            return List.of();
         }
-        return new ArrayList<>(userIdSet);
+
+        LinkedHashSet<String> usernameSet = new LinkedHashSet<>();
+        for (String username : usernames) {
+            User user = resolveUser(username);
+            if (user.getPartId() == null || !user.getPartId().equals(departmentId)) {
+                throw new IllegalArgumentException("PM user must belong to the same department");
+            }
+            usernameSet.add(user.getUsername());
+        }
+        return new ArrayList<>(usernameSet);
     }
 
-    private User resolveUser(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
+    private User resolveUser(String username) {
+        return userRepository.findById(username)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
     }
 }
 
