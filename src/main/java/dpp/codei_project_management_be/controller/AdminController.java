@@ -27,7 +27,6 @@ public class AdminController {
     @PostMapping("/departments")
     public ResponseEntity<DepartmentResponse> createDepartment(@RequestBody CreateDepartmentRequest request) {
         Department department = new Department();
-        department.setPartId(request.getPartId());
         department.setPartName(request.getPartName());
         department.setGitPat(request.getGitPat());
         department.setEcodePat(request.getEcodePat());

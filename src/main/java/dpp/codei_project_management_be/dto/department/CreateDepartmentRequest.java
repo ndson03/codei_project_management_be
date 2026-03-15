@@ -9,7 +9,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CreateDepartmentRequest {
 
-    private Long partId;
     private String partName;
     private String gitPat;
     private String ecodePat;

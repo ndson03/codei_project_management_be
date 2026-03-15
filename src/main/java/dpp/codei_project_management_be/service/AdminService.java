@@ -30,13 +30,8 @@ public class AdminService {
     public Department createDepartment(Department department) {
         requireAdmin();
 
-        if (department.getPartId() == null) {
-            throw new IllegalArgumentException("Department partId is required");
-        }
-
-        if (departmentRepository.existsById(department.getPartId())) {
-            throw new IllegalArgumentException("Department already exists: " + department.getPartId());
-        }
+        Long nextPartId = departmentRepository.findMaxPartId() + 1;
+        department.setPartId(nextPartId);
 
         if (department.getDepartmentPic() != null && department.getDepartmentPic().getId() != null) {
             department.setDepartmentPic(resolveUser(department.getDepartmentPic().getId()));
