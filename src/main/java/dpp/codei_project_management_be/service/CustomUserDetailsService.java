@@ -27,12 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
-            .authorities(
-                user.getRole() == dpp.codei_project_management_be.entity.Role.ADMIN
-                    || user.getUsername().equalsIgnoreCase(adminUsername)
-                    ? "ROLE_ADMIN"
-                    : "ROLE_USER"
-            )
+                .authorities(user.getUsername().equalsIgnoreCase(adminUsername) ? "ROLE_ADMIN" : "ROLE_USER")
                 .build();
     }
 }

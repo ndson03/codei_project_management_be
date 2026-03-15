@@ -2,8 +2,6 @@ package dpp.codei_project_management_be.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,9 +32,5 @@ public class User {
 
     @Column(nullable = false, unique = true, length = 150)
     private String email;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private Role role;
 }
 

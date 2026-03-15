@@ -1,7 +1,6 @@
 package dpp.codei_project_management_be.service;
 
 import dpp.codei_project_management_be.dto.user.AccessMode;
-import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.DepartmentRepository;
 import dpp.codei_project_management_be.repository.ProjectRepository;
@@ -24,8 +23,8 @@ public class AccessControlService {
 
     public boolean isAdmin(User user) {
         return user != null
-                && (user.getRole() == Role.ADMIN
-                || (user.getUsername() != null && user.getUsername().equalsIgnoreCase(adminUsername)));
+                && user.getUsername() != null
+                && user.getUsername().equalsIgnoreCase(adminUsername);
     }
 
     public boolean isDepartmentPic(User user) {
