@@ -1,10 +1,11 @@
 package dpp.codei_project_management_be.dto.user;
 
-import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,15 +16,24 @@ public class UserMeResponse {
     private String username;
     private String fullname;
     private String email;
-    private Role role;
+    private AccessMode accessMode;
+    private List<Long> departmentPicPartIds;
+    private List<Long> pmProjectIds;
 
-    public static UserMeResponse from(User user) {
+    public static UserMeResponse from(
+            User user,
+            AccessMode accessMode,
+            List<Long> departmentPicPartIds,
+            List<Long> pmProjectIds
+    ) {
         UserMeResponse response = new UserMeResponse();
         response.setId(user.getId());
         response.setUsername(user.getUsername());
         response.setFullname(user.getFullname());
         response.setEmail(user.getEmail());
-        response.setRole(user.getRole());
+        response.setAccessMode(accessMode);
+        response.setDepartmentPicPartIds(departmentPicPartIds);
+        response.setPmProjectIds(pmProjectIds);
         return response;
     }
 

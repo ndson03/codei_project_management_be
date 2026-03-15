@@ -20,6 +20,7 @@ public class ProjectDataRequest {
     private List<String> repositories = new ArrayList<>();
     private List<String> pics = new ArrayList<>();
     private List<String> devWhiteList = new ArrayList<>();
+    private List<Long> pmUserIds = new ArrayList<>();
 
 
     public void setTaskManagements(List<String> taskManagements) {
@@ -39,6 +40,11 @@ public class ProjectDataRequest {
 
     public void setDevWhiteList(List<String> devWhiteList) {
         this.devWhiteList = Objects.requireNonNullElseGet(devWhiteList, ArrayList::new);
+    }
+
+
+    public void setPmUserIds(List<Long> pmUserIds) {
+        this.pmUserIds = Objects.requireNonNullElseGet(pmUserIds, ArrayList::new);
     }
 }
 

@@ -2,7 +2,6 @@ package dpp.codei_project_management_be.service;
 
 import dpp.codei_project_management_be.dto.project.ProjectUpdateInfoRequest;
 import dpp.codei_project_management_be.entity.Project;
-import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.ProjectRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,17 +19,18 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final CurrentUserService currentUserService;
+    private final AccessControlService accessControlService;
 
 
     @Transactional
     public Project updateProjectInfo(Long projectId, ProjectUpdateInfoRequest request) {
         User currentUser = currentUserService.getCurrentUser();
-        if (currentUser.getRole() != Role.PROJECT_PM) {
-            throw new AccessDeniedException("Only PROJECT_PM is allowed to update project info");
-        }
-
-        boolean isPmOfProject = projectRepository.existsByIdAndPmsUsername(projectId, currentUser.getUsername());
-        if (!isPmOfProject) {
+        boolean isPmOfProject = accessControlService.isProjectPmOf(currentUser, projectId);
+        boolean isPicOfProjectDepartment = projectRepository.existsByIdAndDepartmentDepartmentPicUsername(
+                projectId,
+                currentUser.getUsername()
+        );
+        if (!isPmOfProject && !isPicOfProjectDepartment) {
             throw new AccessDeniedException("Only assigned PM can update this project");
         }
 
@@ -45,7 +45,17 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<Project> getAllProjects() {
-        return projectRepository.findAll();
+        User currentUser = currentUserService.getCurrentUser();
+        if (accessControlService.isAdmin(currentUser)) {
+            return projectRepository.findAll();
+        }
+        if (accessControlService.isDepartmentPic(currentUser)) {
+            return projectRepository.findAllByDepartmentDepartmentPicUsername(currentUser.getUsername());
+        }
+        if (accessControlService.isProjectPm(currentUser)) {
+            return projectRepository.findAllByPmsUsername(currentUser.getUsername());
+        }
+        return List.of();
     }
 }
 

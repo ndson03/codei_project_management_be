@@ -1,87 +1,90 @@
-# Bao Cao Phan Quyen Va Danh Sach API (Chi Tiet)
+# Backend API And Entity Report (Detailed)
 
-## 1) Tong quan bao mat va phan quyen
+Last updated: 2026-03-15
 
-### 1.1 Kieu xac thuc
-- Co che: JWT Bearer token
-- Dang nhap qua endpoint public: `POST /api/auth/login`
-- Sau khi login thanh cong, FE gui header:
+## 1) Security And Authorization Overview
+
+### 1.1 Authentication
+- Mechanism: JWT Bearer token
+- Public endpoint: `POST /api/auth/login`
+- FE sends header for protected APIs:
 
 ```http
 Authorization: Bearer <accessToken>
 ```
 
-### 1.2 Cau hinh bao mat
-- Security stateless (khong dung session server).
-- `csrf` dang tat.
-- Tat ca endpoint ngoai `/api/auth/**` deu yeu cau da xac thuc.
-- Rule URL-level + business check trong Service.
+### 1.2 Effective access
+- `ADMIN`: fixed configured admin username
+- `PIC`: derived from `Department.departmentPic`
+- `PM`: derived from `Project.pms`
+- `NONE`: authenticated user without current assignment
 
-### 1.3 Danh sach role
-- `ADMIN`
-- `DEPT_PIC`
-- `PROJECT_PM`
-- `DEVELOPER`
+### 1.3 URL-level security (`SecurityConfig`)
+- `/api/auth/**` -> `permitAll`
+- most other `/api/**` endpoints -> authenticated
+- fine-grained department/project authorization now happens in service layer
 
-### 1.4 JWT payload hien tai
-Token duoc tao voi:
+### 1.4 Business-level checks (service layer)
+Besides URL-level checks, services validate business ownership:
+- Admin access for admin actions
+- Department PIC ownership for department/project operations
+- PM assignment for project update operations
+
+### 1.5 JWT payload
+Token includes:
 - `sub`: username
-- `role`: authority dau tien (vd: `ROLE_ADMIN`, `ROLE_DEPT_PIC`, `ROLE_PROJECT_PM`)
+- `role`: first authority, e.g. `ROLE_ADMIN`
 - `iat`, `exp`
 
-Han token:
-- `app.jwt.expiration-ms`
-- Mac dinh: `86400000` ms (~24 gio)
+Token TTL comes from `app.jwt.expiration-ms`.
 
 ---
 
-## 2) Ma loi va format loi
+## 2) Error Format And Status Codes
 
-### 2.1 Format response loi tu GlobalExceptionHandler
+### 2.1 Error response payload
 
 ```json
 {
-  "message": "Noi dung loi"
+  "message": "Error message"
 }
 ```
 
-### 2.2 Mapping status chinh
-- `400 Bad Request`: `IllegalArgumentException`
-- `403 Forbidden`: `AccessDeniedException`
-- `404 Not Found`: `EntityNotFoundException`
-- `401 Unauthorized`: den tu Spring Security (chua xac thuc/token sai-het han)
+(`ErrorResponse` record)
+
+### 2.2 Error mapping (`GlobalExceptionHandler`)
+- `400 Bad Request` -> `IllegalArgumentException`
+- `403 Forbidden` -> `AccessDeniedException`
+- `404 Not Found` -> `EntityNotFoundException`
+- `401 Unauthorized` -> Spring Security (missing/invalid/expired token)
 
 ---
 
-## 3) Bang tong hop tat ca API hien co
+## 3) Full Endpoint List
 
-| STT | Method | Path | Auth | Quyen URL-level |
-|---|---|---|---|---|
-| 1 | POST | `/api/auth/login` | Public | Permit all |
-| 2 | POST | `/api/admin/departments` | Bearer | `ADMIN` |
-| 3 | PUT | `/api/admin/departments/{deptId}/pic` | Bearer | `ADMIN` |
-| 4 | POST | `/api/departments/{deptId}/projects` | Bearer | Dynamic check (DEPT_PIC + ownership) |
-| 5 | PUT | `/api/projects/{projectId}/pm` | Bearer | `DEPT_PIC` |
-| 6 | PUT | `/api/projects/{projectId}` | Bearer | Dynamic check (PROJECT_PM + ownership) |
-| 7 | GET | `/api/departments` | Bearer | Authenticated |
-| 8 | GET | `/api/projects` | Bearer | Authenticated |
-| 9 | GET | `/api/users` | Bearer | `ADMIN` |
-| 10 | GET | `/api/users/me` | Bearer | Authenticated |
-
-Luu y:
-- Ngoai URL-level, Service van check them role va quan he so huu/de duoc gan.
+| # | Method | Path | Auth | URL-level rule | Controller |
+|---|---|---|---|---|---|
+| 1 | POST | `/api/auth/login` | Public | Permit all | `AuthController` |
+| 2 | POST | `/api/auth/logout` | Public | Permit all | `AuthController` |
+| 3 | GET | `/api/users` | Bearer | `ADMIN` | `UserController` |
+| 4 | GET | `/api/users/me` | Bearer | Authenticated | `UserController` |
+| 5 | POST | `/api/admin/departments` | Bearer | Authenticated + service-layer admin check | `AdminController` |
+| 6 | PUT | `/api/admin/departments/{deptId}` | Bearer | Authenticated + service-layer admin check | `AdminController` |
+| 7 | DELETE | `/api/admin/departments/{deptId}` | Bearer | Authenticated + service-layer admin check | `AdminController` |
+| 8 | GET | `/api/departments` | Bearer | Authenticated | `DepartmentController` |
+| 9 | POST | `/api/departments/{deptId}/projects` | Bearer | Authenticated + service-layer PIC check | `DepartmentController` |
+| 10 | GET | `/api/projects` | Bearer | Authenticated | `ProjectController` |
+| 11 | PUT | `/api/projects/{projectId}` | Bearer | Authenticated + service-layer PM/PIC check | `ProjectController` |
+| 12 | PUT | `/api/projects/{projectId}/data` | Bearer | Authenticated + service-layer PM/PIC check | `ProjectController` |
+| 13 | DELETE | `/api/projects/{projectId}` | Bearer | Authenticated + service-layer PIC check | `ProjectController` |
 
 ---
 
-## 4) Chi tiet tung API
+## 4) API Details
 
-## 4.1 Login
-
-### `POST /api/auth/login`
-- Muc dich: Dang nhap, lay access token.
-- Auth: Khong can token.
-
-Request body:
+### 4.1 `POST /api/auth/login`
+- Purpose: Login and issue access token
+- Request DTO: `LoginRequest`
 
 ```json
 {
@@ -90,7 +93,7 @@ Request body:
 }
 ```
 
-Response `200 OK`:
+- Response DTO: `LoginResponse` (`200 OK`)
 
 ```json
 {
@@ -99,23 +102,52 @@ Response `200 OK`:
 }
 ```
 
-Loi thuong gap:
-- `401` neu username/password sai.
+### 4.1.1 `POST /api/auth/logout`
+- Purpose: Logout acknowledgement endpoint for FE
+- Auth: public (same `/api/auth/**` policy)
+- Notes:
+  - current BE uses stateless JWT
+  - this endpoint does not invalidate token on server
+  - FE should clear token/client auth state
+
+- Response (`200 OK`):
+
+```json
+{
+  "message": "Logged out successfully"
+}
+```
 
 ---
 
-## 4.2 Tao department (Admin)
+### 4.2 `GET /api/users`
+- Purpose: Get all users (for admin management screens)
+- Auth: `ADMIN`
+- Service check: current user role must be `ADMIN`
+- Response DTO: `List<UserResponse>` (`200 OK`)
 
-### `POST /api/admin/departments`
-- Muc dich: Tao phong ban.
-- Auth: Bearer token.
-- URL-level role: `ADMIN`.
-- Service check:
-  - User hien tai phai la `ADMIN`.
-  - `partId` khong duoc null.
-  - `partId` khong duoc trung.
+`UserResponse` fields:
+- `id`, `username`, `fullname`, `email`
 
-Request body:
+---
+
+### 4.3 `GET /api/users/me`
+- Purpose: Get current user profile
+- Auth: authenticated
+- Service behavior:
+  - gets username from security context
+  - loads user by username
+- Response DTO: `UserMeResponse` (`200 OK`)
+
+`UserMeResponse` fields:
+- `id`, `username`, `fullname`, `email`, `accessMode`, `departmentPicPartIds`, `pmProjectIds`
+
+---
+
+### 4.4 `POST /api/admin/departments`
+- Purpose: Create department
+- Auth: `ADMIN`
+- Request DTO: `CreateDepartmentRequest`
 
 ```json
 {
@@ -127,183 +159,101 @@ Request body:
   "gerritHttpPassword": "...",
   "jiraSecPat": "...",
   "jiraMxPat": "...",
-  "jiraLaPat": "..."
-}
-```
-
-Response `201 Created`:
-
-```json
-{
-  "partId": 1001,
-  "partName": "Department A",
-  "departmentPicUserId": null
-}
-```
-
-Loi:
-- `400`: `partId` null hoac da ton tai.
-- `403`: khong phai `ADMIN`.
-
----
-
-## 4.3 Gan DEPT PIC cho department (Admin)
-
-### `PUT /api/admin/departments/{deptId}/pic`
-- Muc dich: Gan user lam PIC cua phong ban.
-- Auth: Bearer token.
-- URL-level role: `ADMIN`.
-- Service check:
-  - User thuc hien phai la `ADMIN`.
-  - `userId` phai ton tai.
-  - User duoc gan phai co role `DEPT_PIC`.
-  - Department phai ton tai.
-
-Path param:
-- `deptId` (Long)
-
-Request body:
-
-```json
-{
-  "userId": 12
-}
-```
-
-Response `200 OK`:
-
-```json
-{
-  "partId": 1001,
-  "partName": "Department A",
+  "jiraLaPat": "...",
   "departmentPicUserId": 12
 }
 ```
 
-Loi:
-- `400`: user khong co role `DEPT_PIC`.
-- `403`: khong phai `ADMIN`.
-- `404`: khong tim thay user hoac department.
+- Service checks:
+  - only configured admin account
+  - `partId` is required
+  - department `partId` must be unique
+- Response DTO: `DepartmentResponse` (`201 Created`)
 
 ---
 
-## 4.4 Tao project trong department (DEPT PIC)
-
-### `POST /api/departments/{deptId}/projects`
-- Muc dich: Tao project thuoc department.
-- Auth: Bearer token.
-- URL-level dynamic check (`ApiAuthorizationService`):
-  - Co authority `ROLE_DEPT_PIC`.
-  - Username phai la PIC cua `deptId`.
-- Service check them:
-  - Role user hien tai la `DEPT_PIC`.
-  - User hien tai la PIC cua department.
-  - Department ton tai.
-
-Path param:
-- `deptId` (Long)
-
-Request body:
+### 4.5 `PUT /api/admin/departments/{deptId}`
+- Purpose: Update department data (partial update)
+- Auth: configured admin account
+- Request DTO: `UpdateDepartmentRequest`
 
 ```json
 {
-  "projectName": "Project X",
-  "branch": "main",
-  "notes": "Mo ta",
-  "taskManagements": ["jira"],
-  "repositories": ["repo-a", "repo-b"],
-  "pics": ["alice"],
-  "devWhiteList": ["dev01", "dev02"]
+  "partName": "Department A Updated",
+  "gitPat": "...",
+  "ecodePat": "...",
+  "gerritUserName": "...",
+  "gerritHttpPassword": "...",
+  "jiraSecPat": "...",
+  "jiraMxPat": "...",
+  "jiraLaPat": "...",
+  "departmentPicUserId": 12
 }
 ```
 
-Response `201 Created`:
-
-```json
-{
-  "id": 101,
-  "departmentId": 1001,
-  "projectName": "Project X",
-  "branch": "main",
-  "notes": "Mo ta",
-  "taskManagements": ["jira"],
-  "repositories": ["repo-a", "repo-b"],
-  "pics": ["alice"],
-  "devWhiteList": ["dev01", "dev02"],
-  "pmUserIds": []
-}
-```
-
-Loi:
-- `403`: khong du role hoac khong phai PIC cua department.
-- `404`: department khong ton tai.
+- Service behavior:
+  - only non-null fields are updated
+  - `departmentPicUserId` updates the assigned PIC in the same request
+- Response DTO: `DepartmentResponse` (`200 OK`)
 
 ---
 
-## 4.5 Gan PM cho project (DEPT PIC)
+### 4.6 `DELETE /api/admin/departments/{deptId}`
+- Purpose: Delete a department
+- Auth: configured admin account
+- Service behavior:
+  - verifies department exists
+  - deletes all projects under this department (`findAllByDepartmentPartId` + `deleteAll`)
+  - deletes department
+- Response: `204 No Content`
 
-### `PUT /api/projects/{projectId}/pm`
-- Muc dich: Gan user lam PM cua project.
-- Auth: Bearer token.
-- URL-level role: `DEPT_PIC`.
+---
+
+### 4.7 `GET /api/departments`
+- Purpose: Get all departments
+- Auth: authenticated
+- Response DTO: `List<DepartmentResponse>` (`200 OK`)
+
+`DepartmentResponse` fields:
+- `partId`, `partName`, secret/config fields, `departmentPicUserId`, `departmentPicUsername`
+
+---
+
+### 4.8 `POST /api/departments/{deptId}/projects`
+- Purpose: Create project in department
+- Auth: authenticated + service-layer ownership check
 - Service check:
-  - User thuc hien phai la `DEPT_PIC`.
-  - User thuc hien phai la PIC cua department chua project do.
-  - Project ton tai.
-  - User duoc gan ton tai va role phai la `PROJECT_PM`.
-
-Path param:
-- `projectId` (Long)
-
-Request body:
+  - caller must be PIC of `{deptId}`
+- Request DTO: `ProjectDataRequest`
 
 ```json
 {
-  "userId": 25
-}
-```
-
-Response `200 OK`:
-
-```json
-{
-  "id": 101,
-  "departmentId": 1001,
   "projectName": "Project X",
   "branch": "main",
-  "notes": "Mo ta",
+  "notes": "Initial setup",
   "taskManagements": ["jira"],
   "repositories": ["repo-a", "repo-b"],
   "pics": ["alice"],
   "devWhiteList": ["dev01", "dev02"],
-  "pmUserIds": [25]
+  "pmUserIds": [25, 26]
 }
 ```
 
-Loi:
-- `400`: user duoc gan khong phai `PROJECT_PM`.
-- `403`: khong du quyen hoac khong phai PIC cua department.
-- `404`: project hoac user khong ton tai.
+- Response DTO: `ProjectResponse` (`201 Created`)
 
 ---
 
-## 4.6 PM cap nhat thong tin project
+### 4.9 `GET /api/projects`
+- Purpose: Get all projects
+- Auth: authenticated
+- Response DTO: `List<ProjectResponse>` (`200 OK`)
 
-### `PUT /api/projects/{projectId}`
-- Muc dich: PM cap nhat `branch`, `repositories`.
-- Auth: Bearer token.
-- URL-level dynamic check (`ApiAuthorizationService`):
-  - Co authority `ROLE_PROJECT_PM`.
-  - Username phai nam trong PM list cua project.
-- Service check them:
-  - Role user hien tai phai la `PROJECT_PM`.
-  - User hien tai phai la PM da duoc assign cua project.
-  - Project ton tai.
+---
 
-Path param:
-- `projectId` (Long)
-
-Request body:
+### 4.10 `PUT /api/projects/{projectId}`
+- Purpose: Update PM-editable project info
+- Auth: authenticated + service-layer PM/PIC check
+- Request DTO: `ProjectUpdateInfoRequest`
 
 ```json
 {
@@ -312,158 +262,148 @@ Request body:
 }
 ```
 
-Response `200 OK`:
-
-```json
-{
-  "id": 101,
-  "departmentId": 1001,
-  "projectName": "Project X",
-  "branch": "release-1.0",
-  "notes": "Mo ta",
-  "taskManagements": ["jira"],
-  "repositories": ["repo-a", "repo-c"],
-  "pics": ["alice"],
-  "devWhiteList": ["dev01", "dev02"],
-  "pmUserIds": [25]
-}
-```
-
-Loi:
-- `403`: khong phai PM hoac PM khong duoc assign vao project.
-- `404`: project khong ton tai.
+- Response DTO: `ProjectResponse` (`200 OK`)
 
 ---
 
-## 4.7 Lay thong tin user dang dang nhap
-
-### `GET /api/users/me`
-- Muc dich: Lay profile user hien tai cho FE.
-- Auth: Bearer token.
-- Quyen: Chi can da xac thuc.
-- Service check:
-  - Phai co authentication hop le trong security context.
-  - Username trong token phai tim thay duoc user trong DB.
-
-Response `200 OK`:
-
-```json
-{
-  "id": 25,
-  "username": "pm01",
-  "fullname": "Project Manager",
-  "email": "pm01@example.com",
-  "role": "PROJECT_PM"
-}
-```
-
-Loi:
-- `401`: chua dang nhap/token khong hop le.
-- `404`: user trong token khong con ton tai trong DB.
+### 4.11 `PUT /api/projects/{projectId}/data`
+- Purpose: PIC or assigned PM updates project business data
+- Auth: authenticated + service-layer PM/PIC check
+- Request DTO: `ProjectDataRequest`
+- Service checks:
+  - caller must be PIC of that project's department or assigned PM
+  - `projectName`, `branch`, `notes` are updated only when non-null
+  - list fields are updated using provided values
+  - `pmUserIds` is only applied when caller is the owning PIC
+- Response DTO: `ProjectResponse` (`200 OK`)
 
 ---
 
-## 4.8 Lay danh sach department
-
-### `GET /api/departments`
-- Muc dich: Lay toan bo danh sach department.
-- Auth: Bearer token.
-- Quyen: Chi can da xac thuc.
-
-Response `200 OK`:
-
-```json
-[
-  {
-    "partId": 1001,
-    "partName": "Department A",
-    "departmentPicUserId": 12
-  }
-]
-```
-
-Loi:
-- `401`: chua dang nhap/token khong hop le.
+### 4.12 `DELETE /api/projects/{projectId}`
+- Purpose: Delete project
+- Auth: authenticated + service-layer PIC check
+- Service checks:
+  - caller must be PIC of that project's department
+  - project must exist
+- Response: `204 No Content`
 
 ---
 
-## 4.9 Lay danh sach project
+## 5) DTO Reference
 
-### `GET /api/projects`
-- Muc dich: Lay toan bo danh sach project.
-- Auth: Bearer token.
-- Quyen: Chi can da xac thuc.
+### 5.1 Request DTOs
+- `LoginRequest`: `username`, `password`
+- `CreateDepartmentRequest`: `partId`, `partName`, `gitPat`, `ecodePat`, `gerritUserName`, `gerritHttpPassword`, `jiraSecPat`, `jiraMxPat`, `jiraLaPat`, `departmentPicUserId`
+- `UpdateDepartmentRequest`: same mutable fields as create except no `partId`
+- `ProjectDataRequest`: `projectName`, `branch`, `notes`, `taskManagements`, `repositories`, `pics`, `devWhiteList`, `pmUserIds`
+- `ProjectUpdateInfoRequest`: `branch`, `repositories`
 
-Response `200 OK`:
-
-```json
-[
-  {
-    "id": 101,
-    "departmentId": 1001,
-    "projectName": "Project X",
-    "branch": "main",
-    "notes": "Mo ta",
-    "taskManagements": ["jira"],
-    "repositories": ["repo-a"],
-    "pics": ["alice"],
-    "devWhiteList": ["dev01"],
-    "pmUserIds": [25]
-  }
-]
-```
-
-Loi:
-- `401`: chua dang nhap/token khong hop le.
+### 5.2 Response DTOs
+- `LoginResponse`: `accessToken`, `tokenType`
+- `UserResponse`: `id`, `username`, `fullname`, `email`
+- `UserMeResponse`: `id`, `username`, `fullname`, `email`, `accessMode`, `departmentPicPartIds`, `pmProjectIds`
+- `DepartmentResponse`: department identity, department config fields, `departmentPicUserId`, `departmentPicUsername`
+- `ProjectResponse`: `id`, `departmentId`, `projectName`, `branch`, `notes`, `taskManagements`, `repositories`, `pics`, `devWhiteList`, `pmUserIds`
+- `ErrorResponse`: `message`
 
 ---
 
-## 4.10 Lay danh sach user (Admin)
+## 6) Full Entity Documentation
 
-### `GET /api/users`
-- Muc dich: Lay toan bo danh sach user de phuc vu quan tri/gan quyen.
-- Auth: Bearer token.
-- URL-level role: `ADMIN`.
-- Service check:
-  - User hien tai phai co role `ADMIN`.
+### 6.1 `User` (`app_user`)
+Fields:
+- `id` (`Long`, PK, auto increment)
+- `username` (`String`, unique, not null, max 100)
+- `password` (`String`, not null)
+- `fullname` (`String`, not null, max 150)
+- `email` (`String`, unique, not null, max 150)
+- `role` (`Role`, enum as string, not null)
 
-Response `200 OK`:
+Relations:
+- Referenced by `Department.departmentPic` (1-1)
+- Referenced by `Project.pms` (many-to-many)
 
-```json
-[
-  {
-    "id": 1,
-    "username": "admin",
-    "fullname": "System Admin",
-    "email": "admin@example.com",
-    "role": "ADMIN"
-  }
-]
-```
+### 6.2 `Department` (`department_information`)
+Fields:
+- `partId` (`Long`, PK)
+- `partName` (`String`, not null, max 150)
+- `gitPat` (`String`)
+- `ecodePat` (`String`)
+- `gerritUserName` (`String`)
+- `gerritHttpPassword` (`String`)
+- `jiraSecPat` (`String`)
+- `jiraMxPat` (`String`)
+- `jiraLaPat` (`String`)
+- `departmentPic` (`User`, nullable, unique)
 
-Loi:
-- `401`: chua dang nhap/token khong hop le.
-- `403`: khong phai `ADMIN`.
+Relations:
+- `@OneToOne` to `User` via `pic_user_id`
+- Parent side for `Project.department` (`@ManyToOne` from project)
+
+### 6.3 `Project` (`project_information`)
+Fields:
+- `id` (`Long`, PK, auto increment)
+- `department` (`Department`, not null)
+- `projectName` (`String`, not null, max 200)
+- `branch` (`String`, max 200)
+- `notes` (`String`, max 3000)
+- `taskManagements` (`List<String>`, element collection table `project_task_managements`)
+- `repositories` (`List<String>`, element collection table `project_repositories`)
+- `pics` (`List<String>`, element collection table `project_pics`)
+- `devWhiteList` (`List<String>`, element collection table `project_dev_white_list`)
+- `pms` (`Set<User>`, join table `project_pm`)
+
+Relations:
+- `@ManyToOne` to `Department` (`part_id`)
+- `@ManyToMany` to `User` through `project_pm`
+
+### 6.4 `Role` (enum)
+Values:
+- `ADMIN`
+- `DEPT_PIC`
+- `PROJECT_PM`
+- `DEVELOPER`
+
+### 6.5 `StatisticResult` (`statistic_result`)
+Fields:
+- `id` (`Long`, PK)
+- `departmentId`, `departmentName`, `projectName`, `issueKey`
+- `prNumber`
+- `createdTime`, `mergedTime`
+- `week`, `aiSupport`
+- `numberOfCommit`, `numberOfSegments`, `pattern`, `numberOfFile`
+- `aiLoc`, `firstAiLoc`, `developerLoc`, `aiContribution`
+- `service`, `language`, `taskType`, `devType`, `cycleTimeHour`
+
+Notes:
+- Entity exists in model/repository layer.
+- No public controller endpoint currently exposes this entity directly.
 
 ---
 
-## 5) Quy tac FE can ap dung
+## 7) FE Integration Notes
 
-- Sau login, luu `accessToken` va luon gui `Authorization` cho API protected.
-- Neu `401`: xoa token, dieu huong ve man login.
-- Neu `403`: hien thi thong bao khong du quyen.
-- Co the dung `/api/users/me` de khoi tao state user-role thay vi decode token thu cong.
+- Always include `Authorization: Bearer <token>` except login endpoint.
+- Use `/api/users/me` right after login to initialize role-based UI state.
+- Handle:
+  - `401`: token missing/invalid/expired -> clear auth and redirect login
+  - `403`: authenticated but not authorized -> show permission error
+  - `404`: missing resource
+  - `400`: invalid payload/business rule violation
 
 ---
 
-## 6) Cac API chua co (hien tai)
+## 8) Current Gaps (Not Implemented Yet)
 
-He thong hien chua co cac endpoint sau:
-- `POST /api/users` (tao user)
-- `PUT /api/users/{id}` (cap nhat user)
-- `POST /api/auth/refresh` (refresh token)
-- `POST /api/auth/logout` (logout phia server)
+- User management APIs are still missing:
+  - `POST /api/users`
+  - `PUT /api/users/{id}`
+  - `DELETE /api/users/{id}`
+- Auth refresh endpoint is not present:
+  - `POST /api/auth/refresh`
 
-Neu can, co the bo sung tiep de hoan thien luong quan tri nguoi dung.
+
+
+
 
 

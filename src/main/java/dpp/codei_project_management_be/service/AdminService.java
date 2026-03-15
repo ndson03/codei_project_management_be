@@ -3,7 +3,6 @@ package dpp.codei_project_management_be.service;
 import dpp.codei_project_management_be.dto.department.UpdateDepartmentRequest;
 import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.entity.Project;
-import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.DepartmentRepository;
 import dpp.codei_project_management_be.repository.ProjectRepository;
@@ -24,6 +23,7 @@ public class AdminService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final CurrentUserService currentUserService;
+    private final AccessControlService accessControlService;
 
 
     @Transactional
@@ -38,22 +38,9 @@ public class AdminService {
             throw new IllegalArgumentException("Department already exists: " + department.getPartId());
         }
 
-        return departmentRepository.save(department);
-    }
-
-    @Transactional
-    public Department assignDeptPic(Long userId, Long deptId) {
-        requireAdmin();
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
-        if (user.getRole() != Role.DEPT_PIC) {
-            throw new IllegalArgumentException("Only DEPT_PIC user can be assigned as department PIC");
+        if (department.getDepartmentPic() != null && department.getDepartmentPic().getId() != null) {
+            department.setDepartmentPic(resolveUser(department.getDepartmentPic().getId()));
         }
-
-        Department department = departmentRepository.findById(deptId)
-                .orElseThrow(() -> new EntityNotFoundException("Department not found: " + deptId));
-        department.setDepartmentPic(user);
 
         return departmentRepository.save(department);
     }
@@ -73,6 +60,7 @@ public class AdminService {
         if (request.getJiraSecPat() != null) department.setJiraSecPat(request.getJiraSecPat());
         if (request.getJiraMxPat() != null) department.setJiraMxPat(request.getJiraMxPat());
         if (request.getJiraLaPat() != null) department.setJiraLaPat(request.getJiraLaPat());
+        if (request.getDepartmentPicUserId() != null) department.setDepartmentPic(resolveUser(request.getDepartmentPicUserId()));
 
         return departmentRepository.save(department);
     }
@@ -93,9 +81,14 @@ public class AdminService {
 
     private void requireAdmin() {
         User currentUser = currentUserService.getCurrentUser();
-        if (currentUser.getRole() != Role.ADMIN) {
+        if (!accessControlService.isAdmin(currentUser)) {
             throw new AccessDeniedException("Only ADMIN is allowed to perform this action");
         }
+    }
+
+    private User resolveUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
     }
 }
 

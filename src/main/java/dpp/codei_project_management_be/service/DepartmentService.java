@@ -3,7 +3,6 @@ package dpp.codei_project_management_be.service;
 import dpp.codei_project_management_be.dto.project.ProjectDataRequest;
 import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.entity.Project;
-import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.DepartmentRepository;
 import dpp.codei_project_management_be.repository.ProjectRepository;
@@ -15,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class DepartmentService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
+    private final AccessControlService accessControlService;
 
     @Transactional
     public Project createProject(Long deptId, ProjectDataRequest projectData) {
@@ -43,38 +45,21 @@ public class DepartmentService {
         project.setRepositories(new ArrayList<>(projectData.getRepositories()));
         project.setPics(new ArrayList<>(projectData.getPics()));
         project.setDevWhiteList(new ArrayList<>(projectData.getDevWhiteList()));
+        project.setPms(resolveUsers(projectData.getPmUserIds()));
 
-        return projectRepository.save(project);
-    }
-
-    @Transactional
-    public Project assignProjectPm(Long projectId, Long userId) {
-        User currentUser = currentUserService.getCurrentUser();
-        if (currentUser.getRole() != Role.DEPT_PIC) {
-            throw new AccessDeniedException("Only DEPT_PIC is allowed to assign project PM");
-        }
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new EntityNotFoundException("Project not found: " + projectId));
-
-        Long departmentId = project.getDepartment().getPartId();
-        if (!departmentRepository.existsByPartIdAndDepartmentPicUsername(departmentId, currentUser.getUsername())) {
-            throw new AccessDeniedException("Only PIC of the project's department can assign PM");
-        }
-
-        User pmUser = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
-        if (pmUser.getRole() != Role.PROJECT_PM) {
-            throw new IllegalArgumentException("Only PROJECT_PM user can be assigned as PM");
-        }
-
-        project.getPms().add(pmUser);
         return projectRepository.save(project);
     }
 
     @Transactional(readOnly = true)
     public List<Department> getAllDepartments() {
-        return departmentRepository.findAll();
+        User currentUser = currentUserService.getCurrentUser();
+        if (accessControlService.isAdmin(currentUser)) {
+            return departmentRepository.findAll();
+        }
+        if (accessControlService.isDepartmentPic(currentUser)) {
+            return departmentRepository.findAllByDepartmentPicUsername(currentUser.getUsername());
+        }
+        return List.of();
     }
 
     @Transactional
@@ -84,7 +69,12 @@ public class DepartmentService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found: " + projectId));
 
-        requireDeptPicOfDepartment(currentUser, project.getDepartment().getPartId());
+        boolean canManageProject = accessControlService.isDepartmentPicOf(currentUser, project.getDepartment().getPartId());
+        boolean canEditAsPm = accessControlService.isProjectPmOf(currentUser, projectId);
+
+        if (!canManageProject && !canEditAsPm) {
+            throw new AccessDeniedException("Only the owning PIC or assigned PM can update this project");
+        }
 
         if (request.getProjectName() != null) project.setProjectName(request.getProjectName());
         if (request.getBranch() != null) project.setBranch(request.getBranch());
@@ -93,6 +83,9 @@ public class DepartmentService {
         project.setRepositories(new ArrayList<>(request.getRepositories()));
         project.setPics(new ArrayList<>(request.getPics()));
         project.setDevWhiteList(new ArrayList<>(request.getDevWhiteList()));
+        if (canManageProject) {
+            project.setPms(resolveUsers(request.getPmUserIds()));
+        }
 
         return projectRepository.save(project);
     }
@@ -110,15 +103,22 @@ public class DepartmentService {
     }
 
     private void requireDeptPicOfDepartment(User currentUser, Long deptId) {
-        if (currentUser.getRole() != Role.DEPT_PIC) {
-            throw new AccessDeniedException("Only DEPT_PIC is allowed to create project");
-        }
-
-        boolean isPicOfDepartment = departmentRepository
-                .existsByPartIdAndDepartmentPicUsername(deptId, currentUser.getUsername());
-        if (!isPicOfDepartment) {
+        if (!accessControlService.isDepartmentPicOf(currentUser, deptId)) {
             throw new AccessDeniedException("Only PIC of this department can create project");
         }
+    }
+
+    private Set<User> resolveUsers(List<Long> userIds) {
+        Set<User> users = new LinkedHashSet<>();
+        for (Long userId : userIds) {
+            users.add(resolveUser(userId));
+        }
+        return users;
+    }
+
+    private User resolveUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
     }
 }
 

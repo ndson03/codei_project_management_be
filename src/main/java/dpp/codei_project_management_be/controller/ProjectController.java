@@ -1,6 +1,5 @@
 package dpp.codei_project_management_be.controller;
 
-import dpp.codei_project_management_be.dto.project.AssignProjectPmRequest;
 import dpp.codei_project_management_be.dto.project.ProjectDataRequest;
 import dpp.codei_project_management_be.dto.project.ProjectResponse;
 import dpp.codei_project_management_be.dto.project.ProjectUpdateInfoRequest;
@@ -33,15 +32,6 @@ public class ProjectController {
                 .map(ProjectResponse::from)
                 .toList();
         return ResponseEntity.ok(responses);
-    }
-
-    @PutMapping("/{projectId}/pm")
-    public ResponseEntity<ProjectResponse> assignProjectPm(
-            @PathVariable Long projectId,
-            @RequestBody AssignProjectPmRequest request
-    ) {
-        Project updatedProject = departmentService.assignProjectPm(projectId, request.getUserId());
-        return ResponseEntity.ok(ProjectResponse.from(updatedProject));
     }
 
     @PutMapping("/{projectId}")

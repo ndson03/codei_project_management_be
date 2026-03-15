@@ -3,6 +3,7 @@ package dpp.codei_project_management_be.controller;
 import dpp.codei_project_management_be.dto.user.UserMeResponse;
 import dpp.codei_project_management_be.dto.user.UserResponse;
 import dpp.codei_project_management_be.entity.User;
+import dpp.codei_project_management_be.service.AccessControlService;
 import dpp.codei_project_management_be.service.CurrentUserService;
 import dpp.codei_project_management_be.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class UserController {
 
     private final CurrentUserService currentUserService;
     private final UserService userService;
+    private final AccessControlService accessControlService;
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
@@ -32,7 +34,12 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserMeResponse> getCurrentUserProfile() {
         User currentUser = currentUserService.getCurrentUser();
-        return ResponseEntity.ok(UserMeResponse.from(currentUser));
+        return ResponseEntity.ok(UserMeResponse.from(
+                currentUser,
+                accessControlService.resolveAccessMode(currentUser),
+                accessControlService.getManagedDepartmentIds(currentUser),
+                accessControlService.getManagedProjectIds(currentUser)
+        ));
     }
 }
 

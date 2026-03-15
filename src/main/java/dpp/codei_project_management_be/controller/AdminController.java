@@ -1,6 +1,5 @@
 package dpp.codei_project_management_be.controller;
 
-import dpp.codei_project_management_be.dto.department.AssignDeptPicRequest;
 import dpp.codei_project_management_be.dto.department.CreateDepartmentRequest;
 import dpp.codei_project_management_be.dto.department.DepartmentResponse;
 import dpp.codei_project_management_be.dto.department.UpdateDepartmentRequest;
@@ -38,17 +37,14 @@ public class AdminController {
         department.setJiraMxPat(request.getJiraMxPat());
         department.setJiraLaPat(request.getJiraLaPat());
 
+        if (request.getDepartmentPicUserId() != null) {
+            dpp.codei_project_management_be.entity.User pic = new dpp.codei_project_management_be.entity.User();
+            pic.setId(request.getDepartmentPicUserId());
+            department.setDepartmentPic(pic);
+        }
+
         Department createdDepartment = adminService.createDepartment(department);
         return ResponseEntity.status(HttpStatus.CREATED).body(DepartmentResponse.from(createdDepartment));
-    }
-
-    @PutMapping("/departments/{deptId}/pic")
-    public ResponseEntity<DepartmentResponse> assignDeptPic(
-            @PathVariable Long deptId,
-            @RequestBody AssignDeptPicRequest request
-    ) {
-        Department updatedDepartment = adminService.assignDeptPic(request.getUserId(), deptId);
-        return ResponseEntity.ok(DepartmentResponse.from(updatedDepartment));
     }
 
     @PutMapping("/departments/{deptId}")

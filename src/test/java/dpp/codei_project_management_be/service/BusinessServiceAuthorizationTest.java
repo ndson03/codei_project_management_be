@@ -2,6 +2,7 @@ package dpp.codei_project_management_be.service;
 
 import dpp.codei_project_management_be.dto.project.ProjectDataRequest;
 import dpp.codei_project_management_be.dto.project.ProjectUpdateInfoRequest;
+import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.entity.Project;
 import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
@@ -39,6 +40,9 @@ class BusinessServiceAuthorizationTest {
     @Mock
     private ProjectRepository projectRepository;
 
+    @Mock
+    private AccessControlService accessControlService;
+
     @InjectMocks
     private CurrentUserService currentUserService;
 
@@ -60,35 +64,52 @@ class BusinessServiceAuthorizationTest {
                 departmentRepository,
                 userRepository,
                 projectRepository,
-                currentUserService
+            currentUserService,
+            accessControlService
         );
 
-        assertThrows(AccessDeniedException.class, () -> adminService.assignDeptPic(2L, 1L));
+        when(accessControlService.isAdmin(current)).thenReturn(false);
+
+        Department department = new Department();
+        department.setPartId(1L);
+
+        assertThrows(AccessDeniedException.class, () -> adminService.createDepartment(department));
     }
 
     @Test
-    void assignDeptPic_shouldRejectWhenTargetUserIsNotDeptPic() {
+    void createDepartment_shouldAssignExistingPicWhenAdmin() {
         setAuth("admin", "ROLE_ADMIN");
 
         User admin = new User();
         admin.setUsername("admin");
         admin.setRole(Role.ADMIN);
 
-        User notDeptPic = new User();
-        notDeptPic.setId(2L);
-        notDeptPic.setRole(Role.DEVELOPER);
+        User managedUser = new User();
+        managedUser.setId(2L);
+        managedUser.setUsername("pic-a");
+
+        Department department = new Department();
+        department.setPartId(1L);
 
         when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
-        when(userRepository.findById(2L)).thenReturn(Optional.of(notDeptPic));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(managedUser));
+        when(departmentRepository.existsById(1L)).thenReturn(false);
+        when(departmentRepository.save(any(Department.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(accessControlService.isAdmin(admin)).thenReturn(true);
 
         AdminService adminService = new AdminService(
                 departmentRepository,
                 userRepository,
                 projectRepository,
-                currentUserService
+            currentUserService,
+            accessControlService
         );
 
-        assertThrows(IllegalArgumentException.class, () -> adminService.assignDeptPic(2L, 1L));
+        department.setDepartmentPic(managedUser);
+
+        Department updatedDepartment = adminService.createDepartment(department);
+
+        assertEquals(2L, updatedDepartment.getDepartmentPic().getId());
     }
 
     @Test
@@ -100,13 +121,14 @@ class BusinessServiceAuthorizationTest {
         pic.setRole(Role.DEPT_PIC);
 
         when(userRepository.findByUsername("picA")).thenReturn(Optional.of(pic));
-        when(departmentRepository.existsByPartIdAndDepartmentPicUsername(10L, "picA")).thenReturn(false);
+        when(accessControlService.isDepartmentPicOf(pic, 10L)).thenReturn(false);
 
         DepartmentService departmentService = new DepartmentService(
                 departmentRepository,
                 projectRepository,
                 userRepository,
-                currentUserService
+            currentUserService,
+            accessControlService
         );
 
         assertThrows(AccessDeniedException.class, () -> departmentService.createProject(10L, new ProjectDataRequest()));
@@ -121,9 +143,10 @@ class BusinessServiceAuthorizationTest {
         pm.setRole(Role.PROJECT_PM);
 
         when(userRepository.findByUsername("pmA")).thenReturn(Optional.of(pm));
-        when(projectRepository.existsByIdAndPmsUsername(15L, "pmA")).thenReturn(false);
+        when(accessControlService.isProjectPmOf(pm, 15L)).thenReturn(false);
+        when(projectRepository.existsByIdAndDepartmentDepartmentPicUsername(15L, "pmA")).thenReturn(false);
 
-        ProjectService projectService = new ProjectService(projectRepository, currentUserService);
+        ProjectService projectService = new ProjectService(projectRepository, currentUserService, accessControlService);
 
         ProjectUpdateInfoRequest request = new ProjectUpdateInfoRequest();
         request.setBranch("main");
@@ -144,11 +167,11 @@ class BusinessServiceAuthorizationTest {
         project.setId(15L);
 
         when(userRepository.findByUsername("pmA")).thenReturn(Optional.of(pm));
-        when(projectRepository.existsByIdAndPmsUsername(15L, "pmA")).thenReturn(true);
+        when(accessControlService.isProjectPmOf(pm, 15L)).thenReturn(true);
         when(projectRepository.findById(15L)).thenReturn(Optional.of(project));
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ProjectService projectService = new ProjectService(projectRepository, currentUserService);
+        ProjectService projectService = new ProjectService(projectRepository, currentUserService, accessControlService);
 
         ProjectUpdateInfoRequest request = new ProjectUpdateInfoRequest();
         request.setBranch("release");

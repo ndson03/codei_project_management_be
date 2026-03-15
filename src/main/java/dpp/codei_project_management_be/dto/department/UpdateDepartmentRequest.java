@@ -17,5 +17,6 @@ public class UpdateDepartmentRequest {
     private String jiraSecPat;
     private String jiraMxPat;
     private String jiraLaPat;
+    private Long departmentPicUserId;
 }
 
