@@ -1,6 +1,7 @@
 package dpp.codei_project_management_be.dto.project;
 
 import dpp.codei_project_management_be.entity.Project;
+import dpp.codei_project_management_be.service.ProjectFieldCodec;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,11 +32,11 @@ public class ProjectResponse {
         response.setProjectName(project.getProjectName());
         response.setBranch(project.getBranch());
         response.setNotes(project.getNotes());
-        response.setTaskManagements(new ArrayList<>(project.getTaskManagements()));
-        response.setRepositories(new ArrayList<>(project.getRepositories()));
-        response.setPics(new ArrayList<>(project.getPics()));
-        response.setDevWhiteList(new ArrayList<>(project.getDevWhiteList()));
-        response.setPmUserIds(project.getPms().stream().map(user -> user.getId()).toList());
+        response.setTaskManagements(ProjectFieldCodec.decodeStrings(project.getTaskManagements()));
+        response.setRepositories(ProjectFieldCodec.decodeStrings(project.getRepositories()));
+        response.setPics(ProjectFieldCodec.decodeStrings(project.getPics()));
+        response.setDevWhiteList(ProjectFieldCodec.decodeStrings(project.getDevWhiteList()));
+        response.setPmUserIds(ProjectFieldCodec.decodeLongs(project.getPmUserIds()));
         return response;
     }
 

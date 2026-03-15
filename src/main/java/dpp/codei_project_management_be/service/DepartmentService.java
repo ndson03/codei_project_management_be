@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -41,11 +40,11 @@ public class DepartmentService {
         project.setProjectName(projectData.getProjectName());
         project.setBranch(projectData.getBranch());
         project.setNotes(projectData.getNotes());
-        project.setTaskManagements(new ArrayList<>(projectData.getTaskManagements()));
-        project.setRepositories(new ArrayList<>(projectData.getRepositories()));
-        project.setPics(new ArrayList<>(projectData.getPics()));
-        project.setDevWhiteList(new ArrayList<>(projectData.getDevWhiteList()));
-        project.setPms(resolveUsers(projectData.getPmUserIds()));
+        project.setTaskManagements(ProjectFieldCodec.encodeStrings(projectData.getTaskManagements()));
+        project.setRepositories(ProjectFieldCodec.encodeStrings(projectData.getRepositories()));
+        project.setPics(ProjectFieldCodec.encodeStrings(projectData.getPics()));
+        project.setDevWhiteList(ProjectFieldCodec.encodeStrings(projectData.getDevWhiteList()));
+        project.setPmUserIds(ProjectFieldCodec.encodeLongs(resolveUserIds(projectData.getPmUserIds())));
 
         return projectRepository.save(project);
     }
@@ -79,12 +78,12 @@ public class DepartmentService {
         if (request.getProjectName() != null) project.setProjectName(request.getProjectName());
         if (request.getBranch() != null) project.setBranch(request.getBranch());
         if (request.getNotes() != null) project.setNotes(request.getNotes());
-        project.setTaskManagements(new ArrayList<>(request.getTaskManagements()));
-        project.setRepositories(new ArrayList<>(request.getRepositories()));
-        project.setPics(new ArrayList<>(request.getPics()));
-        project.setDevWhiteList(new ArrayList<>(request.getDevWhiteList()));
+        project.setTaskManagements(ProjectFieldCodec.encodeStrings(request.getTaskManagements()));
+        project.setRepositories(ProjectFieldCodec.encodeStrings(request.getRepositories()));
+        project.setPics(ProjectFieldCodec.encodeStrings(request.getPics()));
+        project.setDevWhiteList(ProjectFieldCodec.encodeStrings(request.getDevWhiteList()));
         if (canManageProject) {
-            project.setPms(resolveUsers(request.getPmUserIds()));
+            project.setPmUserIds(ProjectFieldCodec.encodeLongs(resolveUserIds(request.getPmUserIds())));
         }
 
         return projectRepository.save(project);
@@ -108,12 +107,13 @@ public class DepartmentService {
         }
     }
 
-    private Set<User> resolveUsers(List<Long> userIds) {
-        Set<User> users = new LinkedHashSet<>();
+    private List<Long> resolveUserIds(List<Long> userIds) {
+        LinkedHashSet<Long> userIdSet = new LinkedHashSet<>();
         for (Long userId : userIds) {
-            users.add(resolveUser(userId));
+            resolveUser(userId);
+            userIdSet.add(userId);
         }
-        return users;
+        return new ArrayList<>(userIdSet);
     }
 
     private User resolveUser(Long userId) {

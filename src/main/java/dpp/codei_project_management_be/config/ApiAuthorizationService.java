@@ -2,6 +2,7 @@ package dpp.codei_project_management_be.config;
 
 import dpp.codei_project_management_be.repository.DepartmentRepository;
 import dpp.codei_project_management_be.repository.ProjectRepository;
+import dpp.codei_project_management_be.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,7 @@ public class ApiAuthorizationService {
 
     private final DepartmentRepository departmentRepository;
     private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
 
 
     public boolean canCreateProject(Authentication authentication, HttpServletRequest request) {
@@ -32,8 +34,13 @@ public class ApiAuthorizationService {
         }
 
         Long projectId = extractSegmentId(request.getRequestURI(), "projects");
-        return projectId != null
-                && projectRepository.existsByIdAndPmsUsername(projectId, authentication.getName());
+        if (projectId == null) {
+            return false;
+        }
+
+        return userRepository.findByUsername(authentication.getName())
+            .map(user -> projectRepository.existsByIdAndPmUserId(projectId, user.getId()))
+            .orElse(false);
     }
 
     private boolean hasRole(Authentication authentication, String role) {

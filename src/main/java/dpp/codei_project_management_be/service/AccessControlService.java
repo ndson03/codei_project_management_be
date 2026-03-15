@@ -38,13 +38,14 @@ public class AccessControlService {
     }
 
     public boolean isProjectPm(User user) {
-        return user != null && projectRepository.existsByPmsUsername(user.getUsername());
+        return user != null && user.getId() != null && projectRepository.existsByPmUserId(user.getId());
     }
 
     public boolean isProjectPmOf(User user, Long projectId) {
         return user != null
+                && user.getId() != null
                 && projectId != null
-                && projectRepository.existsByIdAndPmsUsername(projectId, user.getUsername());
+                && projectRepository.existsByIdAndPmUserId(projectId, user.getId());
     }
 
     public AccessMode resolveAccessMode(User user) {
@@ -73,7 +74,7 @@ public class AccessControlService {
         if (user == null) {
             return List.of();
         }
-        return projectRepository.findAllByPmsUsername(user.getUsername()).stream()
+        return projectRepository.findAllByPmUserId(user.getId()).stream()
                 .map(project -> project.getId())
                 .toList();
     }

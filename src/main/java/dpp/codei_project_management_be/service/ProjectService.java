@@ -38,7 +38,7 @@ public class ProjectService {
                 .orElseThrow(() -> new EntityNotFoundException("Project not found: " + projectId));
 
         project.setBranch(request.getBranch());
-        project.setRepositories(new ArrayList<>(request.getRepositories()));
+        project.setRepositories(ProjectFieldCodec.encodeStrings(request.getRepositories()));
 
         return projectRepository.save(project);
     }
@@ -53,7 +53,7 @@ public class ProjectService {
             return projectRepository.findAllByDepartmentDepartmentPicUsername(currentUser.getUsername());
         }
         if (accessControlService.isProjectPm(currentUser)) {
-            return projectRepository.findAllByPmsUsername(currentUser.getUsername());
+            return projectRepository.findAllByPmUserId(currentUser.getId());
         }
         return List.of();
     }
