@@ -79,7 +79,6 @@ public class DepartmentService {
         if (request.getNotes() != null) project.setNotes(request.getNotes());
         project.setTaskManagements(ProjectFieldCodec.encodeStrings(request.getTaskManagements()));
         project.setRepositories(ProjectFieldCodec.encodeStrings(request.getRepositories()));
-        project.setPics(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(project.getDepartment().getPartId(), request.getPics(), "PIC username")));
         project.setDevWhiteList(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(project.getDepartment().getPartId(), request.getDevWhiteList(), "Dev whitelist username")));
         if (canManageProject) {
             // PM semantics are now represented by the pics field.
