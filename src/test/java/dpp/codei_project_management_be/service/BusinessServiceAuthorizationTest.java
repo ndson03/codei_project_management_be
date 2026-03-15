@@ -4,7 +4,6 @@ import dpp.codei_project_management_be.dto.project.ProjectDataRequest;
 import dpp.codei_project_management_be.dto.project.ProjectUpdateInfoRequest;
 import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.entity.Project;
-import dpp.codei_project_management_be.entity.Role;
 import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.DepartmentRepository;
 import dpp.codei_project_management_be.repository.ProjectRepository;
@@ -57,7 +56,6 @@ class BusinessServiceAuthorizationTest {
 
         User current = new User();
         current.setUsername("dev");
-        current.setRole(Role.DEVELOPER);
         when(userRepository.findByUsername("dev")).thenReturn(Optional.of(current));
 
         AdminService adminService = new AdminService(
@@ -82,7 +80,6 @@ class BusinessServiceAuthorizationTest {
 
         User admin = new User();
         admin.setUsername("admin");
-        admin.setRole(Role.ADMIN);
 
         User managedUser = new User();
         managedUser.setId(2L);
@@ -118,7 +115,6 @@ class BusinessServiceAuthorizationTest {
 
         User pic = new User();
         pic.setUsername("picA");
-        pic.setRole(Role.DEPT_PIC);
 
         when(userRepository.findByUsername("picA")).thenReturn(Optional.of(pic));
         when(accessControlService.isDepartmentPicOf(pic, 10L)).thenReturn(false);
@@ -140,7 +136,6 @@ class BusinessServiceAuthorizationTest {
 
         User pm = new User();
         pm.setUsername("pmA");
-        pm.setRole(Role.PROJECT_PM);
 
         when(userRepository.findByUsername("pmA")).thenReturn(Optional.of(pm));
         when(accessControlService.isProjectPmOf(pm, 15L)).thenReturn(false);
@@ -161,7 +156,6 @@ class BusinessServiceAuthorizationTest {
 
         User pm = new User();
         pm.setUsername("pmA");
-        pm.setRole(Role.PROJECT_PM);
 
         Project project = new Project();
         project.setId(15L);
@@ -180,7 +174,7 @@ class BusinessServiceAuthorizationTest {
         Project updated = projectService.updateProjectInfo(15L, request);
 
         assertEquals("release", updated.getBranch());
-        assertEquals(Collections.singletonList("repo-a"), updated.getRepositories());
+        assertEquals(ProjectFieldCodec.encodeStrings(Collections.singletonList("repo-a")), updated.getRepositories());
     }
 
     private void setAuth(String username, String role) {
@@ -192,6 +186,8 @@ class BusinessServiceAuthorizationTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }
+
+
 
 
 
