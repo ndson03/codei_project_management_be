@@ -42,9 +42,8 @@ public class DepartmentService {
         project.setNotes(projectData.getNotes());
         project.setTaskManagements(ProjectFieldCodec.encodeStrings(projectData.getTaskManagements()));
         project.setRepositories(ProjectFieldCodec.encodeStrings(projectData.getRepositories()));
-        project.setPics(ProjectFieldCodec.encodeStrings(projectData.getPics()));
-        project.setDevWhiteList(ProjectFieldCodec.encodeStrings(projectData.getDevWhiteList()));
-        project.setPmUsernames(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(deptId, projectData.getPmUsernames())));
+        project.setPics(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(deptId, projectData.getPics(), "PIC username")));
+        project.setDevWhiteList(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(deptId, projectData.getDevWhiteList(), "Dev whitelist username")));
 
         return projectRepository.save(project);
     }
@@ -80,10 +79,10 @@ public class DepartmentService {
         if (request.getNotes() != null) project.setNotes(request.getNotes());
         project.setTaskManagements(ProjectFieldCodec.encodeStrings(request.getTaskManagements()));
         project.setRepositories(ProjectFieldCodec.encodeStrings(request.getRepositories()));
-        project.setPics(ProjectFieldCodec.encodeStrings(request.getPics()));
-        project.setDevWhiteList(ProjectFieldCodec.encodeStrings(request.getDevWhiteList()));
+        project.setPics(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(project.getDepartment().getPartId(), request.getPics(), "PIC username")));
+        project.setDevWhiteList(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(project.getDepartment().getPartId(), request.getDevWhiteList(), "Dev whitelist username")));
         if (canManageProject) {
-            project.setPmUsernames(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(project.getDepartment().getPartId(), request.getPmUsernames())));
+            // PM semantics are now represented by the pics field.
         }
 
         return projectRepository.save(project);
@@ -107,7 +106,7 @@ public class DepartmentService {
         }
     }
 
-    private List<String> resolveUsernamesForDepartment(Long departmentId, List<String> usernames) {
+    private List<String> resolveUsernamesForDepartment(Long departmentId, List<String> usernames, String fieldName) {
         if (usernames == null) {
             return List.of();
         }
@@ -116,7 +115,7 @@ public class DepartmentService {
         for (String username : usernames) {
             User user = resolveUser(username);
             if (user.getPartId() == null || !user.getPartId().equals(departmentId)) {
-                throw new IllegalArgumentException("PM user must belong to the same department");
+                throw new IllegalArgumentException(fieldName + " must belong to the same department");
             }
             usernameSet.add(user.getUsername());
         }

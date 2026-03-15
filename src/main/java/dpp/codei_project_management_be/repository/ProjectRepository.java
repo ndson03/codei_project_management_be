@@ -17,25 +17,25 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 			select 1
 			from project_information p
 			where p.id = :projectId
-			  and coalesce(p.pm_usernames, '[]')::jsonb @> to_jsonb(ARRAY[:username])
+			  and coalesce(p.pics, '[]')::jsonb @> to_jsonb(ARRAY[:username])
 		)
 		""", nativeQuery = true)
-	boolean existsByIdAndPmUsername(@Param("projectId") Long projectId, @Param("username") String username);
+	boolean existsByIdAndPicUsername(@Param("projectId") Long projectId, @Param("username") String username);
 
 	@Query(value = """
 		select exists (
 			select 1
 			from project_information p
-			where coalesce(p.pm_usernames, '[]')::jsonb @> to_jsonb(ARRAY[:username])
+			where coalesce(p.pics, '[]')::jsonb @> to_jsonb(ARRAY[:username])
 		)
 		""", nativeQuery = true)
-	boolean existsByPmUsername(@Param("username") String username);
+	boolean existsByPicUsername(@Param("username") String username);
 
 	@Query(value = """
 		select p.*
 		from project_information p
-		where coalesce(p.pm_usernames, '[]')::jsonb @> to_jsonb(ARRAY[:username])
+		where coalesce(p.pics, '[]')::jsonb @> to_jsonb(ARRAY[:username])
 		""", nativeQuery = true)
-	List<Project> findAllByPmUsername(@Param("username") String username);
+	List<Project> findAllByPicUsername(@Param("username") String username);
 }
 

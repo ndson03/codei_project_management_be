@@ -53,7 +53,7 @@ public class ProjectService {
             return projectRepository.findAllByDepartmentDepartmentPicUsername(currentUser.getUsername());
         }
         if (accessControlService.isProjectPm(currentUser)) {
-            return projectRepository.findAllByPmUsername(currentUser.getUsername());
+            return projectRepository.findAllByPicUsername(currentUser.getUsername());
         }
         return List.of();
     }

@@ -24,7 +24,6 @@ public class ProjectResponse {
     private List<String> repositories = new ArrayList<>();
     private List<String> pics = new ArrayList<>();
     private List<String> devWhiteList = new ArrayList<>();
-    private List<String> pmUsernames = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -39,7 +38,6 @@ public class ProjectResponse {
         response.setRepositories(ProjectFieldCodec.decodeStrings(project.getRepositories()));
         response.setPics(ProjectFieldCodec.decodeStrings(project.getPics()));
         response.setDevWhiteList(ProjectFieldCodec.decodeStrings(project.getDevWhiteList()));
-        response.setPmUsernames(ProjectFieldCodec.decodeStrings(project.getPmUsernames()));
         response.setCreatedAt(project.getCreatedAt());
         response.setUpdatedAt(project.getUpdatedAt());
         return response;
