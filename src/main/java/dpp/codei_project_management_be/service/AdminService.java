@@ -14,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,7 +26,6 @@ public class AdminService {
     private final ProjectRepository projectRepository;
     private final CurrentUserService currentUserService;
     private final AccessControlService accessControlService;
-
 
     @Transactional
     public Department createDepartment(CreateDepartmentRequest request) {
@@ -41,11 +41,8 @@ public class AdminService {
         department.setJiraMxPat(request.getJiraMxPat());
         department.setJiraLaPat(request.getJiraLaPat());
 
-        if (request.getDepartmentPicUsername() != null && !request.getDepartmentPicUsername().isBlank()) {
-            User picUser = resolveUser(request.getDepartmentPicUsername());
-            validateDepartmentPicCandidate(picUser, null);
-            department.setDepartmentPic(picUser);
-        }
+        List<String> pics = resolveDepartmentPics(request.getDepartmentPicUsernames(), request.getDepartmentPicUsername());
+        department.setPics(ProjectFieldCodec.encodeStrings(pics));
 
         return departmentRepository.save(department);
     }
@@ -65,10 +62,20 @@ public class AdminService {
         if (request.getJiraSecPat() != null) department.setJiraSecPat(request.getJiraSecPat());
         if (request.getJiraMxPat() != null) department.setJiraMxPat(request.getJiraMxPat());
         if (request.getJiraLaPat() != null) department.setJiraLaPat(request.getJiraLaPat());
-        if (request.getDepartmentPicUsername() != null && !request.getDepartmentPicUsername().isBlank()) {
+
+        if (request.getDepartmentPicUsernames() != null) {
+            List<String> pics = resolveDepartmentPics(request.getDepartmentPicUsernames(), null);
+            department.setPics(ProjectFieldCodec.encodeStrings(pics));
+        } else if (request.getDepartmentPicUsername() != null && !request.getDepartmentPicUsername().isBlank()) {
+            List<String> pics = new ArrayList<>(ProjectFieldCodec.decodeStrings(department.getPics()));
             User picUser = resolveUser(request.getDepartmentPicUsername());
-            validateDepartmentPicCandidate(picUser, deptId);
-            department.setDepartmentPic(picUser);
+            if (accessControlService.isAdmin(picUser)) {
+                throw new IllegalArgumentException("Admin user cannot be assigned as Department PIC");
+            }
+            if (!pics.contains(picUser.getUsername())) {
+                pics.add(picUser.getUsername());
+            }
+            department.setPics(ProjectFieldCodec.encodeStrings(pics));
         }
 
         return departmentRepository.save(department);
@@ -81,7 +88,6 @@ public class AdminService {
         Department department = departmentRepository.findById(deptId)
                 .orElseThrow(() -> new EntityNotFoundException("Department not found: " + deptId));
 
-        // Cascade delete all projects under this department
         List<Project> projects = projectRepository.findAllByDepartmentPartId(deptId);
         projectRepository.deleteAll(projects);
 
@@ -100,18 +106,23 @@ public class AdminService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
     }
 
-    private void validateDepartmentPicCandidate(User user, Long departmentId) {
-        if (accessControlService.isAdmin(user)) {
-            throw new IllegalArgumentException("Admin user cannot be assigned as Department PIC");
+    private List<String> resolveDepartmentPics(List<String> usernames, String fallbackUsername) {
+        List<String> source = usernames != null ? usernames : new ArrayList<>();
+        if (source.isEmpty() && fallbackUsername != null && !fallbackUsername.isBlank()) {
+            source.add(fallbackUsername);
         }
 
-        boolean assignedAsPicElsewhere = departmentId == null
-                ? departmentRepository.existsByDepartmentPicUsername(user.getUsername())
-                : departmentRepository.existsByDepartmentPicUsernameAndPartIdNot(user.getUsername(), departmentId);
-
-        if (assignedAsPicElsewhere) {
-            throw new IllegalArgumentException("User is already PIC of another department");
+        List<String> result = new ArrayList<>();
+        for (String username : source) {
+            User user = resolveUser(username);
+            if (accessControlService.isAdmin(user)) {
+                throw new IllegalArgumentException("Admin user cannot be assigned as Department PIC");
+            }
+            if (!result.contains(user.getUsername())) {
+                result.add(user.getUsername());
+            }
         }
+        return result;
     }
 }
 

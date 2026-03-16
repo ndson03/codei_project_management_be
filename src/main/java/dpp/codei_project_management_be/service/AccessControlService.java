@@ -1,9 +1,9 @@
 package dpp.codei_project_management_be.service;
 
 import dpp.codei_project_management_be.dto.user.AccessMode;
+import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.DepartmentRepository;
-import dpp.codei_project_management_be.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,39 +15,46 @@ import java.util.List;
 public class AccessControlService {
 
     private final DepartmentRepository departmentRepository;
-    private final ProjectRepository projectRepository;
 
     @Value("${app.auth.admin-username:admin}")
     private String adminUsername;
 
-
+    /**
+     * Check if user is admin
+     */
     public boolean isAdmin(User user) {
         return user != null
                 && user.getUsername() != null
                 && user.getUsername().equalsIgnoreCase(adminUsername);
     }
 
+    /**
+     * Check if user is PIC of any department
+     */
     public boolean isDepartmentPic(User user) {
-        return user != null && departmentRepository.existsByDepartmentPicUsername(user.getUsername());
+        if (user == null || user.getUsername() == null) {
+            return false;
+        }
+        List<Department> managedDepts = departmentRepository.findAll();
+        return managedDepts.stream()
+                .anyMatch(dept -> isPicInJsonArray(dept.getPics(), user.getUsername()));
     }
 
+    /**
+     * Check if user is PIC of specific department
+     */
     public boolean isDepartmentPicOf(User user, Long departmentId) {
-        return user != null
-                && departmentId != null
-                && departmentRepository.existsByPartIdAndDepartmentPicUsername(departmentId, user.getUsername());
+        if (user == null || departmentId == null || user.getUsername() == null) {
+            return false;
+        }
+        return departmentRepository.findById(departmentId)
+                .map(dept -> isPicInJsonArray(dept.getPics(), user.getUsername()))
+                .orElse(false);
     }
 
-    public boolean isProjectPm(User user) {
-        return user != null && user.getUsername() != null && projectRepository.existsByPicUsername(user.getUsername());
-    }
-
-    public boolean isProjectPmOf(User user, Long projectId) {
-        return user != null
-                && user.getUsername() != null
-                && projectId != null
-                && projectRepository.existsByIdAndPicUsername(projectId, user.getUsername());
-    }
-
+    /**
+     * Resolve access mode for user: ADMIN, PIC, or USER
+     */
     public AccessMode resolveAccessMode(User user) {
         if (isAdmin(user)) {
             return AccessMode.ADMIN;
@@ -55,27 +62,31 @@ public class AccessControlService {
         if (isDepartmentPic(user)) {
             return AccessMode.PIC;
         }
-        if (isProjectPm(user)) {
-            return AccessMode.PM;
-        }
-        return AccessMode.NONE;
+        return AccessMode.USER;
     }
 
+    /**
+     * Get list of department IDs managed by user as PIC
+     */
     public List<Long> getManagedDepartmentIds(User user) {
-        if (user == null) {
+        if (user == null || user.getUsername() == null) {
             return List.of();
         }
-        return departmentRepository.findAllByDepartmentPicUsername(user.getUsername()).stream()
-                .map(department -> department.getPartId())
+        String username = user.getUsername();
+        return departmentRepository.findAll().stream()
+                .filter(dept -> isPicInJsonArray(dept.getPics(), username))
+                .map(Department::getPartId)
                 .toList();
     }
 
-    public List<Long> getManagedProjectIds(User user) {
-        if (user == null) {
-            return List.of();
+    /**
+     * Check if username exists in JSON array string (e.g., "[\"user1\",\"user2\"]")
+     */
+    private boolean isPicInJsonArray(String jsonArray, String username) {
+        if (jsonArray == null || jsonArray.trim().isEmpty() || jsonArray.equals("[]")) {
+            return false;
         }
-        return projectRepository.findAllByPicUsername(user.getUsername()).stream()
-                .map(project -> project.getId())
-                .toList();
+        // Simple check - in production, use Jackson or similar
+        return jsonArray.contains("\"" + username + "\"");
     }
 }

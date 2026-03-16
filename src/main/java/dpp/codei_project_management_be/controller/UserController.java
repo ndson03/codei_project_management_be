@@ -32,8 +32,6 @@ public class UserController {
         List<User> users;
         if ("PIC".equalsIgnoreCase(assignmentType)) {
             users = userService.getUsersForDepartmentPicAssignment(deptId);
-        } else if ("PM".equalsIgnoreCase(assignmentType) && deptId != null) {
-            users = userService.getUsersByPartId(deptId);
         } else {
             users = userService.getAllUsers();
         }
@@ -50,8 +48,7 @@ public class UserController {
         return ResponseEntity.ok(UserMeResponse.from(
                 currentUser,
                 accessControlService.resolveAccessMode(currentUser),
-                accessControlService.getManagedDepartmentIds(currentUser),
-                accessControlService.getManagedProjectIds(currentUser)
+                accessControlService.getManagedDepartmentIds(currentUser)
         ));
     }
 }

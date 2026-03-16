@@ -10,7 +10,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,13 +24,13 @@ public class ProjectService {
     @Transactional
     public Project updateProjectInfo(Long projectId, ProjectUpdateInfoRequest request) {
         User currentUser = currentUserService.getCurrentUser();
-        boolean isPmOfProject = accessControlService.isProjectPmOf(currentUser, projectId);
-        boolean isPicOfProjectDepartment = projectRepository.existsByIdAndDepartmentDepartmentPicUsername(
-                projectId,
-                currentUser.getUsername()
-        );
-        if (!isPmOfProject && !isPicOfProjectDepartment) {
-            throw new AccessDeniedException("Only assigned PM can update this project");
+        boolean isAdmin = accessControlService.isAdmin(currentUser);
+        boolean isProjectPic = projectRepository.existsByIdAndPicUsername(projectId, currentUser.getUsername());
+        boolean isPicOfProjectDepartment = projectRepository.findById(projectId)
+            .map(project -> accessControlService.isDepartmentPicOf(currentUser, project.getDepartment().getPartId()))
+            .orElse(false);
+        if (!isAdmin && !isProjectPic && !isPicOfProjectDepartment) {
+            throw new AccessDeniedException("Only ADMIN, assigned project PIC, or department PIC can update this project");
         }
 
         Project project = projectRepository.findById(projectId)
@@ -45,17 +44,8 @@ public class ProjectService {
 
     @Transactional(readOnly = true)
     public List<Project> getAllProjects() {
-        User currentUser = currentUserService.getCurrentUser();
-        if (accessControlService.isAdmin(currentUser)) {
-            return projectRepository.findAll();
-        }
-        if (accessControlService.isDepartmentPic(currentUser)) {
-            return projectRepository.findAllByDepartmentDepartmentPicUsername(currentUser.getUsername());
-        }
-        if (accessControlService.isProjectPm(currentUser)) {
-            return projectRepository.findAllByPicUsername(currentUser.getUsername());
-        }
-        return List.of();
+        // All authenticated users (ADMIN, PIC, USER) can view all projects
+        return projectRepository.findAll();
     }
 }
 

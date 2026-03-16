@@ -31,7 +31,9 @@ public class DepartmentService {
     @Transactional
     public Project createProject(Long deptId, ProjectDataRequest projectData) {
         User currentUser = currentUserService.getCurrentUser();
-        requireDeptPicOfDepartment(currentUser, deptId);
+        if (!accessControlService.isAdmin(currentUser)) {
+            requireDeptPicOfDepartment(currentUser, deptId);
+        }
 
         Department department = departmentRepository.findById(deptId)
                 .orElseThrow(() -> new EntityNotFoundException("Department not found: " + deptId));
@@ -56,7 +58,9 @@ public class DepartmentService {
             return departmentRepository.findAll();
         }
         if (accessControlService.isDepartmentPic(currentUser)) {
-            return departmentRepository.findAllByDepartmentPicUsername(currentUser.getUsername());
+                return departmentRepository.findAll().stream()
+                    .filter(dept -> accessControlService.isDepartmentPicOf(currentUser, dept.getPartId()))
+                    .toList();
         }
         return List.of();
     }
@@ -83,20 +87,20 @@ public class DepartmentService {
         if (request.getJiraMxPat() != null) department.setJiraMxPat(request.getJiraMxPat());
         if (request.getJiraLaPat() != null) department.setJiraLaPat(request.getJiraLaPat());
 
-        if (request.getDepartmentPicUsername() != null && !request.getDepartmentPicUsername().isBlank()) {
-            if (!isAdmin) {
-                throw new AccessDeniedException("Only ADMIN can reassign department PIC");
-            }
-
+        if (request.getDepartmentPicUsernames() != null) {
+            List<String> pics = resolveDepartmentPics(request.getDepartmentPicUsernames(), null);
+            department.setPics(ProjectFieldCodec.encodeStrings(pics));
+        } else if (request.getDepartmentPicUsername() != null && !request.getDepartmentPicUsername().isBlank()) {
+            List<String> pics = new ArrayList<>(ProjectFieldCodec.decodeStrings(department.getPics()));
             User picUser = userRepository.findById(request.getDepartmentPicUsername())
                     .orElseThrow(() -> new EntityNotFoundException("User not found: " + request.getDepartmentPicUsername()));
             if (accessControlService.isAdmin(picUser)) {
                 throw new IllegalArgumentException("Admin user cannot be assigned as Department PIC");
             }
-            if (departmentRepository.existsByDepartmentPicUsernameAndPartIdNot(picUser.getUsername(), deptId)) {
-                throw new IllegalArgumentException("User is already PIC of another department");
+            if (!pics.contains(picUser.getUsername())) {
+                pics.add(picUser.getUsername());
             }
-            department.setDepartmentPic(picUser);
+            department.setPics(ProjectFieldCodec.encodeStrings(pics));
         }
 
         return departmentRepository.save(department);
@@ -109,11 +113,12 @@ public class DepartmentService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found: " + projectId));
 
+        boolean isAdmin = accessControlService.isAdmin(currentUser);
         boolean canManageProject = accessControlService.isDepartmentPicOf(currentUser, project.getDepartment().getPartId());
-        boolean canEditAsPm = accessControlService.isProjectPmOf(currentUser, projectId);
+        boolean isProjectPic = projectRepository.existsByIdAndPicUsername(projectId, currentUser.getUsername());
 
-        if (!canManageProject && !canEditAsPm) {
-            throw new AccessDeniedException("Only the owning PIC or assigned PM can update this project");
+        if (!isAdmin && !canManageProject && !isProjectPic) {
+            throw new AccessDeniedException("Only ADMIN, owning PIC, or assigned project PIC can update this project");
         }
 
         if (request.getProjectName() != null) project.setProjectName(request.getProjectName());
@@ -121,10 +126,14 @@ public class DepartmentService {
         if (request.getNotes() != null) project.setNotes(request.getNotes());
         project.setTaskManagements(ProjectFieldCodec.encodeStrings(request.getTaskManagements()));
         project.setRepositories(ProjectFieldCodec.encodeStrings(request.getRepositories()));
-        project.setDevWhiteList(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(project.getDepartment().getPartId(), request.getDevWhiteList(), "Dev whitelist username")));
-        if (canManageProject) {
-            // PM semantics are now represented by the pics field.
+        if (isAdmin || canManageProject) {
+            project.setPics(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(
+                project.getDepartment().getPartId(),
+                request.getPics(),
+                "PIC username"
+            )));
         }
+        project.setDevWhiteList(ProjectFieldCodec.encodeStrings(resolveUsernamesForDepartment(project.getDepartment().getPartId(), request.getDevWhiteList(), "Dev whitelist username")));
 
         return projectRepository.save(project);
     }
@@ -136,7 +145,12 @@ public class DepartmentService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new EntityNotFoundException("Project not found: " + projectId));
 
-        requireDeptPicOfDepartment(currentUser, project.getDepartment().getPartId());
+        boolean canDeleteProject = accessControlService.isAdmin(currentUser) || 
+            accessControlService.isDepartmentPicOf(currentUser, project.getDepartment().getPartId());
+        
+        if (!canDeleteProject) {
+            throw new AccessDeniedException("Only ADMIN or department PIC can delete this project");
+        }
 
         projectRepository.delete(project);
     }
@@ -155,9 +169,6 @@ public class DepartmentService {
         LinkedHashSet<String> usernameSet = new LinkedHashSet<>();
         for (String username : usernames) {
             User user = resolveUser(username);
-            if (user.getPartId() == null || !user.getPartId().equals(departmentId)) {
-                throw new IllegalArgumentException(fieldName + " must belong to the same department");
-            }
             usernameSet.add(user.getUsername());
         }
         return new ArrayList<>(usernameSet);
@@ -166,6 +177,23 @@ public class DepartmentService {
     private User resolveUser(String username) {
         return userRepository.findById(username)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+    }
+
+    private List<String> resolveDepartmentPics(List<String> usernames, String fallbackUsername) {
+        List<String> source = usernames != null ? new ArrayList<>(usernames) : new ArrayList<>();
+        if (source.isEmpty() && fallbackUsername != null && !fallbackUsername.isBlank()) {
+            source.add(fallbackUsername);
+        }
+
+        LinkedHashSet<String> usernameSet = new LinkedHashSet<>();
+        for (String username : source) {
+            User user = resolveUser(username);
+            if (accessControlService.isAdmin(user)) {
+                throw new IllegalArgumentException("Admin user cannot be assigned as Department PIC");
+            }
+            usernameSet.add(user.getUsername());
+        }
+        return new ArrayList<>(usernameSet);
     }
 }
 

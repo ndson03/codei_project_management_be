@@ -17,13 +17,11 @@ public class UserMeResponse {
     private String email;
     private AccessMode accessMode;
     private List<Long> departmentPicPartIds;
-    private List<Long> pmProjectIds;
 
     public static UserMeResponse from(
             User user,
             AccessMode accessMode,
-            List<Long> departmentPicPartIds,
-            List<Long> pmProjectIds
+            List<Long> departmentPicPartIds
     ) {
         UserMeResponse response = new UserMeResponse();
         response.setUsername(user.getUsername());
@@ -31,7 +29,6 @@ public class UserMeResponse {
         response.setEmail(user.getEmail());
         response.setAccessMode(accessMode);
         response.setDepartmentPicPartIds(departmentPicPartIds);
-        response.setPmProjectIds(pmProjectIds);
         return response;
     }
 

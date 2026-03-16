@@ -4,6 +4,8 @@ import dpp.codei_project_management_be.entity.Department;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import dpp.codei_project_management_be.service.ProjectFieldCodec;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,7 +21,7 @@ public class DepartmentResponse {
     private String jiraSecPat;
     private String jiraMxPat;
     private String jiraLaPat;
-    private String departmentPicUsername;
+    private List<String> departmentPicUsernames;
 
     public static DepartmentResponse from(Department department) {
         DepartmentResponse response = new DepartmentResponse();
@@ -32,9 +34,7 @@ public class DepartmentResponse {
         response.setJiraSecPat(department.getJiraSecPat());
         response.setJiraMxPat(department.getJiraMxPat());
         response.setJiraLaPat(department.getJiraLaPat());
-        response.setDepartmentPicUsername(
-                department.getDepartmentPic() != null ? department.getDepartmentPic().getUsername() : null
-        );
+        response.setDepartmentPicUsernames(ProjectFieldCodec.decodeStrings(department.getPics()));
         return response;
     }
 

@@ -27,8 +27,5 @@ public class User {
 
     @Column(nullable = false, unique = true, length = 150)
     private String email;
-
-    @Column(name = "part_id")
-    private Long partId;
 }
 

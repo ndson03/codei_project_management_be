@@ -24,11 +24,7 @@ public class StatisticService {
             return statisticRepository.findAll();
         }
 
-        Long partId = currentUser.getPartId();
-        if (partId == null) {
-            return List.of();
-        }
-
-        return statisticRepository.findAllByDepartmentId(partId);
+        // Without user-part binding, non-admin users can read all statistic rows.
+        return statisticRepository.findAll();
     }
 }
