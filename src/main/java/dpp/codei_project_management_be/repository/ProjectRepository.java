@@ -19,12 +19,5 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 		)
 		""", nativeQuery = true)
 	boolean existsByIdAndPicUsername(@Param("projectId") Long projectId, @Param("username") String username);
-
-	@Query(value = """
-		select p.*
-		from project_information p
-		where coalesce(p.pics, '[]')::jsonb @> to_jsonb(ARRAY[:username])
-		""", nativeQuery = true)
-	List<Project> findAllByPicUsername(@Param("username") String username);
 }
 

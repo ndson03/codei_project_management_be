@@ -2,7 +2,6 @@ package dpp.codei_project_management_be.service;
 
 import dpp.codei_project_management_be.dto.department.CreateDepartmentRequest;
 import dpp.codei_project_management_be.dto.project.ProjectDataRequest;
-import dpp.codei_project_management_be.dto.project.ProjectUpdateInfoRequest;
 import dpp.codei_project_management_be.entity.Department;
 import dpp.codei_project_management_be.entity.Project;
 import dpp.codei_project_management_be.entity.User;
@@ -96,7 +95,7 @@ class BusinessServiceAuthorizationTest {
     }
 
     @Test
-    void updateProjectInfo_shouldUpdateWhenAssignedProjectPic() {
+    void updateProjectData_shouldUpdateWhenAssignedProjectPic() {
         setAuth("picA", "ROLE_USER");
 
         User pic = new User();
@@ -108,19 +107,28 @@ class BusinessServiceAuthorizationTest {
         Project project = new Project();
         project.setId(15L);
         project.setDepartment(department);
+        project.setBranch("main");
 
         when(userRepository.findByUsername("picA")).thenReturn(Optional.of(pic));
+        when(accessControlService.isAdmin(pic)).thenReturn(false);
+        when(accessControlService.isDepartmentPicOf(pic, 10L)).thenReturn(false);
         when(projectRepository.existsByIdAndPicUsername(15L, "picA")).thenReturn(true);
         when(projectRepository.findById(15L)).thenReturn(Optional.of(project));
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ProjectService projectService = new ProjectService(projectRepository, currentUserService, accessControlService);
+        DepartmentService departmentService = new DepartmentService(
+            departmentRepository,
+            projectRepository,
+            userRepository,
+            currentUserService,
+            accessControlService
+        );
 
-        ProjectUpdateInfoRequest request = new ProjectUpdateInfoRequest();
+        ProjectDataRequest request = new ProjectDataRequest();
         request.setBranch("release");
         request.setRepositories(Collections.singletonList("repo-a"));
 
-        Project updated = projectService.updateProjectInfo(15L, request);
+        Project updated = departmentService.updateProjectData(15L, request);
 
         assertEquals("release", updated.getBranch());
         assertEquals(ProjectFieldCodec.encodeStrings(Collections.singletonList("repo-a")), updated.getRepositories());

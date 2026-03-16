@@ -2,7 +2,6 @@ package dpp.codei_project_management_be.controller;
 
 import dpp.codei_project_management_be.dto.project.ProjectDataRequest;
 import dpp.codei_project_management_be.dto.project.ProjectResponse;
-import dpp.codei_project_management_be.dto.project.ProjectUpdateInfoRequest;
 import dpp.codei_project_management_be.entity.Project;
 import dpp.codei_project_management_be.service.DepartmentService;
 import dpp.codei_project_management_be.service.ProjectService;
@@ -35,15 +34,6 @@ public class ProjectController {
     }
 
     @PutMapping("/{projectId}")
-    public ResponseEntity<ProjectResponse> updateProjectInfo(
-            @PathVariable Long projectId,
-            @RequestBody ProjectUpdateInfoRequest request
-    ) {
-        Project updatedProject = projectService.updateProjectInfo(projectId, request);
-        return ResponseEntity.ok(ProjectResponse.from(updatedProject));
-    }
-
-    @PutMapping("/{projectId}/data")
     public ResponseEntity<ProjectResponse> updateProjectData(
             @PathVariable Long projectId,
             @RequestBody ProjectDataRequest request
