@@ -24,17 +24,6 @@ public final class ProjectFieldCodec {
         return read(payload, new TypeReference<List<String>>() {});
     }
 
-    public static String encodeLongs(List<Long> values) {
-        return write(values == null ? List.of() : values);
-    }
-
-    public static List<Long> decodeLongs(String payload) {
-        if (payload == null || payload.isBlank()) {
-            return new ArrayList<>();
-        }
-        return read(payload, new TypeReference<List<Long>>() {});
-    }
-
     private static String write(Object value) {
         try {
             return OBJECT_MAPPER.writeValueAsString(value);

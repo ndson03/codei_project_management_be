@@ -26,11 +26,6 @@ public class UserService {
                 .filter(user -> !accessControlService.isAdmin(user))
                 .toList();
     }
-
-    @Transactional(readOnly = true)
-    public List<User> getUsersByPartId(Long partId) {
-        return List.of();
-    }
 }
 
 
