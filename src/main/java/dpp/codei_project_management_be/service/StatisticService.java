@@ -1,7 +1,6 @@
 package dpp.codei_project_management_be.service;
 
 import dpp.codei_project_management_be.entity.StatisticResult;
-import dpp.codei_project_management_be.entity.User;
 import dpp.codei_project_management_be.repository.StatisticRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,17 +13,9 @@ import java.util.List;
 public class StatisticService {
 
     private final StatisticRepository statisticRepository;
-    private final CurrentUserService currentUserService;
-    private final AccessControlService accessControlService;
 
     @Transactional(readOnly = true)
     public List<StatisticResult> getAllStatisticResults() {
-        User currentUser = currentUserService.getCurrentUser();
-        if (accessControlService.isAdmin(currentUser)) {
-            return statisticRepository.findAll();
-        }
-
-        // Without user-part binding, non-admin users can read all statistic rows.
         return statisticRepository.findAll();
     }
 }
